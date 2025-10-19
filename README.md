@@ -38,8 +38,8 @@ This project uses `npm` to manage dependencies and run build scripts.
 # Install project dependencies
 npm install
 
-# Build the extension. This creates the `dist` folder.
-npm run build
+# Build the extension. This creates the `dist` folder with proper icons.
+npm run build:simple
 ```
 
 ### 3. Load the Extension in Chrome

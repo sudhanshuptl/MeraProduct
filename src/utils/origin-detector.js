@@ -3,8 +3,11 @@
  * Core logic for detecting product origin information
  */
 
+console.log('[MeraProduct] OriginDetector class loaded');
+
 class OriginDetector {
   constructor() {
+    console.log('[MeraProduct] OriginDetector instance created');
     this.isIndianProduct = false;
     this.originInfo = null;
     this.confidence = 0;

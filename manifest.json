@@ -13,8 +13,8 @@
   
   "host_permissions": [
     "*://*.amazon.in/*",
-    "*://*.amazon.com/*",
-    "*://*.flipkart.com/*",
+    "*://www.flipkart.com/*",
+    "*://www.flipkart.in/*",
     "*://*.myntra.com/*"
   ],
   
@@ -26,9 +26,7 @@
     {
       "matches": [
         "*://*.amazon.in/*/dp/*",
-        "*://*.amazon.com/*/dp/*",
-        "*://*.amazon.in/dp/*",
-        "*://*.amazon.com/dp/*"
+        "*://*.amazon.in/dp/*"
       ],
       "js": ["src/utils/origin-detector.js", "src/content/content-amazon.js"],
       "css": ["src/content/content.css"],
@@ -36,8 +34,8 @@
     },
     {
       "matches": [
-        "*://*.flipkart.com/*/p/*",
-        "*://*.flipkart.com/*/*/p/*"
+        "*://www.flipkart.com/*/p/*",
+        "*://www.flipkart.in/*/p/*"
       ],
       "js": ["src/utils/origin-detector.js", "src/content/content-flipkart.js"],
       "css": ["src/content/content.css"],
@@ -68,7 +66,7 @@
   "web_accessible_resources": [
     {
       "resources": ["assets/icons/*.png"],
-      "matches": ["*://*.amazon.in/*", "*://*.amazon.com/*", "*://*.flipkart.com/*", "*://*.myntra.com/*"]
+      "matches": ["*://*.amazon.in/*", "*://www.flipkart.in/*", "*://www.flipkart.com/*", "*://*.myntra.com/*"]
     }
   ]
 }
