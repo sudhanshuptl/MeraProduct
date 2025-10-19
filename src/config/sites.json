@@ -1,0 +1,172 @@
+{
+  "sites": {
+    "amazon": {
+      "domains": ["amazon.in", "amazon.com"],
+      "selectors": {
+        "productTitle": [
+          "#productTitle",
+          ".product-title",
+          "[data-automation-id='product-title']"
+        ],
+        "featureBullets": [
+          "#feature-bullets ul",
+          ".a-unordered-list.a-vertical.a-spacing-mini",
+          "[data-feature-name='featurebullets']"
+        ],
+        "productDetails": [
+          "#detailBullets_feature_div",
+          "#productDetails_detailBullets_sections1",
+          "#productDetails_techSpec_section_1"
+        ],
+        "specifications": [
+          "#productDetails_techSpec_section_1",
+          ".a-section.a-spacing-small"
+        ],
+        "breadcrumb": [
+          "#wayfinding-breadcrumbs_feature_div",
+          ".a-breadcrumb"
+        ]
+      },
+      "originKeywords": [
+        "country of origin",
+        "made in",
+        "manufactured in",
+        "origin country",
+        "country:",
+        "item origin"
+      ],
+      "badgePosition": {
+        "primary": "#productTitle",
+        "fallback": "#wayfinding-breadcrumbs_feature_div"
+      }
+    },
+    "flipkart": {
+      "domains": ["flipkart.com"],
+      "selectors": {
+        "productTitle": [
+          ".B_NuCI",
+          "._35KyD6",
+          "[data-testid='product-name']"
+        ],
+        "highlights": [
+          "._2418kt",
+          "._1AN87F",
+          "[data-testid='product-highlights']"
+        ],
+        "specifications": [
+          "._1mKl_E",
+          "._3k-BhJ",
+          "[data-testid='specifications']"
+        ],
+        "productDetails": [
+          "._1mKl_E table",
+          "._3k-BhJ table",
+          "[data-testid='product-details']"
+        ],
+        "breadcrumb": [
+          "._1naDKh",
+          "._2m3-t3"
+        ]
+      },
+      "originKeywords": [
+        "country of origin",
+        "made in",
+        "manufactured in",
+        "origin",
+        "manufacturing country"
+      ],
+      "badgePosition": {
+        "primary": ".B_NuCI",
+        "fallback": "._1naDKh"
+      }
+    },
+    "myntra": {
+      "domains": ["myntra.com"],
+      "selectors": {
+        "productTitle": [
+          ".pdp-name",
+          ".pdp-product-name",
+          "[data-testid='name']"
+        ],
+        "productDetails": [
+          ".index-productDetails",
+          ".pdp-product-details-container"
+        ],
+        "specifications": [
+          ".index-tableContainer",
+          ".pdp-productDetailsContainer"
+        ]
+      },
+      "originKeywords": [
+        "country of origin",
+        "made in",
+        "manufactured in"
+      ],
+      "badgePosition": {
+        "primary": ".pdp-name",
+        "fallback": ".index-productDetails"
+      }
+    }
+  },
+  "detection": {
+    "strongIndicators": [
+      "made in india",
+      "manufactured in india",
+      "country of origin: india",
+      "origin: india",
+      "country of origin india",
+      "भारत में निर्मित",
+      "मेड इन इंडिया",
+      "भारतीय उत्पाद"
+    ],
+    "weakIndicators": [
+      "indian",
+      "bharati",
+      "desi",
+      "swadeshi",
+      "hindustani",
+      "bharat"
+    ],
+    "confidenceWeights": {
+      "strongIndicator": 0.9,
+      "weakIndicator": 0.6,
+      "manufacturerMatch": 0.7,
+      "contextMatch": 0.5
+    },
+    "minimumConfidence": 0.5
+  },
+  "notifications": {
+    "templates": {
+      "productFound": {
+        "en": "🇮🇳 Made in India product detected!",
+        "hi": "🇮🇳 भारत में निर्मित उत्पाद मिला!"
+      },
+      "highConfidence": {
+        "en": "✅ High confidence detection",
+        "hi": "✅ उच्च विश्वसनीयता से पाया गया"
+      },
+      "lowConfidence": {
+        "en": "⚠️ Possible Indian product",
+        "hi": "⚠️ संभावित भारतीय उत्पाद"
+      }
+    }
+  },
+  "ui": {
+    "badgeStyles": {
+      "default": {
+        "background": "linear-gradient(135deg, #ff9933 0%, #ffffff 50%, #138808 100%)",
+        "border": "2px solid #ff6600",
+        "color": "#333"
+      },
+      "compact": {
+        "background": "#ff6600",
+        "color": "white",
+        "fontSize": "12px"
+      }
+    },
+    "animations": {
+      "fadeIn": "meraproduct-fadeIn 0.5s ease-in-out",
+      "slideIn": "meraproduct-slideIn 0.3s ease-out"
+    }
+  }
+}

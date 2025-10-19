@@ -1,0 +1,98 @@
+{
+  "extensionName": {
+    "message": "MeraProduct - Made in India Detector"
+  },
+  "extensionDescription": {
+    "message": "Instantly identifies Made in India products while browsing e-commerce sites. Support Atmanirbhar Bharat! 🇮🇳"
+  },
+  "productMadeInIndia": {
+    "message": "Made in India"
+  },
+  "productDetected": {
+    "message": "Made in India product detected!"
+  },
+  "highConfidence": {
+    "message": "High confidence detection"
+  },
+  "lowConfidence": {
+    "message": "Possible Indian product"
+  },
+  "supportMessage": {
+    "message": "Support Atmanirbhar Bharat!"
+  },
+  "extensionActive": {
+    "message": "Active"
+  },
+  "extensionInactive": {
+    "message": "Inactive"
+  },
+  "totalDetections": {
+    "message": "Products Found"
+  },
+  "sitesSupported": {
+    "message": "Sites Supported"
+  },
+  "recentDetections": {
+    "message": "Recent Detections"
+  },
+  "noDetectionsYet": {
+    "message": "No detections yet. Visit Amazon or Flipkart to start!"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "about": {
+    "message": "About"
+  },
+  "support": {
+    "message": "Support"
+  },
+  "enableExtension": {
+    "message": "Enable Extension"
+  },
+  "disableExtension": {
+    "message": "Disable Extension"
+  },
+  "showNotifications": {
+    "message": "Show Notifications"
+  },
+  "language": {
+    "message": "Language"
+  },
+  "english": {
+    "message": "English"
+  },
+  "hindi": {
+    "message": "Hindi"
+  },
+  "detectionThreshold": {
+    "message": "Detection Confidence Threshold"
+  },
+  "exportData": {
+    "message": "Export Detection Data"
+  },
+  "clearData": {
+    "message": "Clear All Data"
+  },
+  "saveSettings": {
+    "message": "Save Settings"
+  },
+  "resetSettings": {
+    "message": "Reset to Defaults"
+  },
+  "settingsSaved": {
+    "message": "Settings saved successfully!"
+  },
+  "privacyNotice": {
+    "message": "Privacy Notice"
+  },
+  "privacyMessage": {
+    "message": "MeraProduct processes all data locally in your browser. No personal information or browsing data is sent to external servers."
+  },
+  "madeWithLove": {
+    "message": "Made with ❤️ for Atmanirbhar Bharat"
+  },
+  "version": {
+    "message": "Version 1.0.0"
+  }
+}

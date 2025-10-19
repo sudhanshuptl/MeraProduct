@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeraProduct</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="flag">🇮🇳</span>
+                <h1>MeraProduct</h1>
+            </div>
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Active</span>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="stats-section">
+                <h2>Detection Stats</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalDetections">0</span>
+                        <span class="stat-label">Products Found</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="sitesSupported">2</span>
+                        <span class="stat-label">Sites Supported</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recent-section">
+                <h3>Recent Detections</h3>
+                <div class="recent-list" id="recentList">
+                    <div class="empty-state">
+                        <span>🔍</span>
+                        <p>No detections yet. Visit Amazon or Flipkart to start!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-section">
+                <button class="btn btn-primary" id="toggleBtn">
+                    <span id="toggleText">Disable Extension</span>
+                </button>
+                <button class="btn btn-secondary" id="optionsBtn">
+                    Settings
+                </button>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="#" id="aboutLink">About</a>
+                <a href="#" id="supportLink">Support</a>
+                <a href="https://github.com/sudhanshuptl/meraproduct" target="_blank">GitHub</a>
+            </div>
+            <p class="tagline">Made with ❤️ for Atmanirbhar Bharat</p>
+        </footer>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

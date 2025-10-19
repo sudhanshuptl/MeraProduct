@@ -26,14 +26,41 @@ It automatically detects whether the product you’re viewing online is *Made in
 
 ## 🚀 Getting Started
 
-1. Clone the repository:
-```
-git clone https://github.com/your-username/meraproduct.git
-cd meraproduct
+### 1. Clone the Repository
+```bash
+git clone https://github.com/sudhanshuptl/MeraProduct.git
+cd MeraProduct
 ```
 
-2. Open Chrome → go to `chrome://extensions/` → enable **Developer mode**.
-3. Click “Load unpacked” and select your project folder.
+### 2. Install Dependencies & Build
+This project uses `npm` to manage dependencies and run build scripts.
+```bash
+# Install project dependencies
+npm install
+
+# Build the extension. This creates the `dist` folder.
+npm run build
+```
+
+### 3. Load the Extension in Chrome
+1.  Open Google Chrome and navigate to `chrome://extensions/`.
+2.  Enable **Developer mode** using the toggle switch in the top-right corner.
+3.  Click the **“Load unpacked”** button.
+4.  Select the **`dist`** folder from the project directory (NOT the root folder).
+
+The MeraProduct extension icon should now appear in your Chrome toolbar!
+
+---
+
+## 💻 Development Workflow
+
+For active development, use the `watch` script:
+
+```bash
+# Automatically rebuild the extension into the `dist` folder when source files change
+npm run watch
+```
+After the initial build, you only need to **reload the extension** in `chrome://extensions/` to apply your changes. You do not need to remove and re-add it.
 
 ---
 

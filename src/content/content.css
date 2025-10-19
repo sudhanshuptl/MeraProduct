@@ -1,0 +1,97 @@
+/* MeraProduct Content Script Styles */
+
+.meraproduct-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #ff9933 0%, #ffffff 50%, #138808 100%);
+  border: 2px solid #ff6600;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  animation: meraproduct-fadeIn 0.5s ease-in-out;
+  z-index: 10000;
+  position: relative;
+}
+
+.meraproduct-badge-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meraproduct-text {
+  color: #2c5530;
+  font-weight: 700;
+}
+
+/* Amazon-specific styling */
+.meraproduct-amazon-badge {
+  max-width: fit-content;
+  margin: 12px 0;
+}
+
+/* Flipkart-specific styling */
+.meraproduct-flipkart-badge {
+  max-width: fit-content;
+  margin: 10px 0;
+}
+
+/* Animation */
+@keyframes meraproduct-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hover effect */
+.meraproduct-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 102, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .meraproduct-badge {
+    font-size: 12px;
+    padding: 6px 10px;
+    margin: 6px 0;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .meraproduct-badge {
+    background: #ff6600;
+    color: #ffffff;
+    text-shadow: none;
+    border: 3px solid #333333;
+  }
+  
+  .meraproduct-text {
+    color: #ffffff;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .meraproduct-badge {
+    animation: none;
+  }
+  
+  .meraproduct-badge:hover {
+    transform: none;
+    transition: none;
+  }
+}

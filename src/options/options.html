@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeraProduct - Settings</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="flag">🇮🇳</span>
+                <h1>MeraProduct Settings</h1>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="settings-section">
+                <h2>General Settings</h2>
+                
+                <div class="setting-group">
+                    <label class="setting-label">
+                        <input type="checkbox" id="enableExtension" checked>
+                        <span class="checkmark"></span>
+                        Enable MeraProduct Extension
+                    </label>
+                    <p class="setting-description">
+                        Enable or disable the extension functionality on supported sites.
+                    </p>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">
+                        <input type="checkbox" id="showNotifications" checked>
+                        <span class="checkmark"></span>
+                        Show Notifications
+                    </label>
+                    <p class="setting-description">
+                        Display desktop notifications when Made in India products are detected.
+                    </p>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label" for="language">
+                        Preferred Language
+                    </label>
+                    <select id="language" class="setting-select">
+                        <option value="en">English</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                    </select>
+                    <p class="setting-description">
+                        Choose your preferred language for the extension interface.
+                    </p>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h2>Detection Settings</h2>
+                
+                <div class="setting-group">
+                    <label class="setting-label" for="confidenceThreshold">
+                        Detection Confidence Threshold
+                    </label>
+                    <div class="range-input-group">
+                        <input type="range" id="confidenceThreshold" min="0.1" max="1.0" step="0.1" value="0.6" class="setting-range">
+                        <span class="range-value" id="confidenceValue">60%</span>
+                    </div>
+                    <p class="setting-description">
+                        Minimum confidence level required to show Made in India badge.
+                    </p>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">
+                        <input type="checkbox" id="showLowConfidence">
+                        <span class="checkmark"></span>
+                        Show Low Confidence Detections
+                    </label>
+                    <p class="setting-description">
+                        Display detections even when confidence is below the threshold.
+                    </p>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h2>Supported Sites</h2>
+                
+                <div class="sites-list">
+                    <div class="site-item">
+                        <div class="site-info">
+                            <span class="site-name">Amazon.in</span>
+                            <span class="site-status active">Active</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="amazonIn" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="site-item">
+                        <div class="site-info">
+                            <span class="site-name">Amazon.com</span>
+                            <span class="site-status active">Active</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="amazonCom" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="site-item">
+                        <div class="site-info">
+                            <span class="site-name">Flipkart.com</span>
+                            <span class="site-status active">Active</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="flipkart" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="site-item">
+                        <div class="site-info">
+                            <span class="site-name">Myntra.com</span>
+                            <span class="site-status coming-soon">Coming Soon</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="myntra" disabled>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h2>Data & Privacy</h2>
+                
+                <div class="setting-group">
+                    <button class="btn btn-secondary" id="exportDataBtn">
+                        Export Detection Data
+                    </button>
+                    <p class="setting-description">
+                        Export your detection history as a JSON file.
+                    </p>
+                </div>
+
+                <div class="setting-group">
+                    <button class="btn btn-danger" id="clearDataBtn">
+                        Clear All Data
+                    </button>
+                    <p class="setting-description">
+                        Remove all stored detection data and reset settings to defaults.
+                    </p>
+                </div>
+
+                <div class="privacy-info">
+                    <h3>🔒 Privacy Notice</h3>
+                    <p>
+                        MeraProduct processes all data locally in your browser. 
+                        No personal information or browsing data is sent to external servers.
+                        Detection results are stored locally for statistics purposes only.
+                    </p>
+                </div>
+            </div>
+
+            <div class="actions-section">
+                <button class="btn btn-primary" id="saveBtn">
+                    Save Settings
+                </button>
+                <button class="btn btn-secondary" id="resetBtn">
+                    Reset to Defaults
+                </button>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <p>MeraProduct v1.0.0 - Made with ❤️ for Atmanirbhar Bharat</p>
+                <div class="footer-links">
+                    <a href="https://github.com/sudhanshuptl/meraproduct" target="_blank">GitHub</a>
+                    <a href="https://github.com/sudhanshuptl/meraproduct/issues" target="_blank">Report Issues</a>
+                    <a href="#" id="aboutBtn">About</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div id="successMessage" class="message success" style="display: none;">
+        Settings saved successfully!
+    </div>
+
+    <div id="errorMessage" class="message error" style="display: none;">
+        Failed to save settings. Please try again.
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html>

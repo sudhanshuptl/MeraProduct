@@ -1,0 +1,59 @@
+{
+  "name": "meraproduct",
+  "version": "1.0.0",
+  "description": "Chrome extension to detect Made in India products on e-commerce sites",
+  "main": "manifest.json",
+  "scripts": {
+    "build": "npm run clean && npm run copy-files",
+    "build:dev": "npm run clean && npm run copy-files && npm run create-debug-icons",
+    "build:simple": "npm run clean && npm run copy-files && npm run create-placeholder-icons",
+    "clean": "rm -rf dist",
+    "copy-files": "mkdir -p dist && cp -r src dist/ && cp -r assets dist/ && cp -r _locales dist/ && cp manifest.json dist/",
+    "create-debug-icons": "node scripts/create-debug-icons.js",
+    "create-placeholder-icons": "node scripts/create-placeholder-icons.js",
+    "fix-icons": "node scripts/fix-icons.js",
+    "package": "npm run build && cd dist && zip -r ../meraproduct-v1.0.0.zip .",
+    "test": "npm run test:lint && npm run test:unit",
+    "test:lint": "eslint src/**/*.js --fix",
+    "test:unit": "jest",
+    "test:e2e": "node scripts/test-sites.js",
+    "dev": "npm run build:simple && npm run fix-icons && echo 'Load unpacked extension from ./dist directory'",
+    "validate": "web-ext lint --source-dir=dist",
+    "watch": "nodemon --watch src --watch assets --watch _locales --watch manifest.json --exec 'npm run build:simple && npm run fix-icons'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sudhanshuptl/meraproduct.git"
+  },
+  "keywords": [
+    "chrome-extension",
+    "made-in-india",
+    "e-commerce",
+    "product-detection",
+    "atmanirbhar-bharat"
+  ],
+  "author": "Sudhanshu Patel",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/sudhanshuptl/meraproduct/issues"
+  },
+  "homepage": "https://github.com/sudhanshuptl/meraproduct#readme",
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "nodemon": "^3.0.1",
+    "puppeteer": "^23.0.0",
+    "web-ext": "^8.0.0"
+  },
+  "optionalDependencies": {
+    "canvas": "^2.11.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": [
+    "Chrome >= 88"
+  ]
+}
