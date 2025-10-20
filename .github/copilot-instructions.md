@@ -149,4 +149,4 @@ const observer = new MutationObserver((mutations) => {
 });
 ```
 
-When implementing new features, prioritize the privacy-first approach and ensure all processing remains local to maintain user trust and extension performance.
+Always ask questions if you need clarification on any part of the codebase or architecture!stions before generating code snippets.

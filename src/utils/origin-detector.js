@@ -25,12 +25,12 @@ class OriginDetector {
     
     // Strong indicators for Indian origin
     const strongIndianIndicators = [
-      'made in india',
-      'manufactured in india', 
-      'country of origin: india',
-      'origin: india',
-      'भारत में निर्मित',
-      'मेड इन इंडिया'
+      /made in india/i,
+      /manufactured in india/i, 
+      /(country of origin|country):?\s*india/i,
+      /origin:?\s*india/i,
+      /भारत में निर्मित/i,
+      /मेड इन इंडिया/i
     ];
 
     // Weak indicators for Indian origin
