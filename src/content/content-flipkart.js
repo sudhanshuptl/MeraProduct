@@ -78,11 +78,40 @@
       log.warn('Product title not found with any selector');
     }
 
-    // Extract product image
-    const imageElement = document.querySelector(FLIPKART_SELECTORS.productImage);
+    // Extract product image - try multiple selectors
+    let imageElement = document.querySelector(FLIPKART_SELECTORS.productImage);
+    
+    // Fallback selectors for product images
+    if (!imageElement || !imageElement.src) {
+      const fallbackSelectors = [
+        '._2r_T1I img[src]',
+        '._396cs4 img[src]',
+        '.CXW8mj img[src]',
+        '._2_AcLJ img[src]',
+        'img[data-id]',
+        'img[alt*="Product"]',
+        'img[alt*="product"]'
+      ];
+      
+      for (const selector of fallbackSelectors) {
+        imageElement = document.querySelector(selector);
+        if (imageElement && (imageElement.src || imageElement.getAttribute('data-src'))) {
+          break;
+        }
+      }
+    }
+    
     if (imageElement) {
-      productInfo.image = imageElement.src || imageElement.getAttribute('data-src') || '';
-      log.verbose('Product image found:', productInfo.image ? 'Yes' : 'No');
+      const src = imageElement.src || imageElement.getAttribute('data-src') || '';
+      // Filter out placeholder/loading images
+      if (src && !src.includes('placeholder') && !src.includes('loading') && src.startsWith('http')) {
+        productInfo.image = src;
+        log.verbose('Product image found:', src.substring(0, 80));
+      } else {
+        log.verbose('Product image URL invalid or placeholder');
+      }
+    } else {
+      log.verbose('Product image not found');
     }
 
     // Extract highlights
