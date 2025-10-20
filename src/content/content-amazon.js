@@ -123,8 +123,8 @@
       existingBadge.remove();
     }
     
-    const confidence = result ? Math.round(result.confidence * 100) : 0;
-    const badge = detector.createFloatingBadge(isMadeInIndia, confidence / 100);
+    const confidence = result ? result.confidence : 0;
+    const badge = detector.createFloatingBadge(isMadeInIndia, confidence);
     
     // Insert at the end of body for fixed positioning
     document.body.appendChild(badge);

@@ -191,7 +191,7 @@
           url: window.location.href,
           site: 'flipkart',
           isMadeInIndia: isMadeInIndia,
-          confidence: Math.round(confidence), // Use confidence directly (already 0-100)
+          confidence: confidence, // Confidence is 0-1, storage.js will convert to percentage
           indicator: (isMadeInIndia ? '🇮🇳 MADE IN INDIA' : '🚫 NOT MADE IN INDIA'),
           manufacturer: result?.manufacturer || '',
           image: productInfo.image || ''
