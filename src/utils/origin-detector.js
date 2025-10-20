@@ -84,19 +84,195 @@ class OriginDetector {
   }
 
   /**
-   * Create Indian flag badge element
+   * Create floating badge element
+   * @param {boolean} isMadeInIndia - Whether product is made in India
+   * @param {number} confidence - Confidence level (0-1)
+   * @returns {HTMLElement} Badge element
+   */
+  createFloatingBadge(isMadeInIndia, confidence = 1.0) {
+    const badge = document.createElement('div');
+    badge.className = 'meraproduct-floating-badge';
+    
+    if (isMadeInIndia) {
+      // Made in India - Green badge with Indian flag
+      badge.innerHTML = `
+        <div class="meraproduct-badge-inner meraproduct-badge-india">
+          <div class="meraproduct-badge-icon">🇮🇳</div>
+          <div class="meraproduct-badge-text">
+            <div class="meraproduct-badge-title">MADE IN INDIA</div>
+            <div class="meraproduct-badge-confidence">Confidence: ${Math.round(confidence * 100)}%</div>
+          </div>
+        </div>
+      `;
+      badge.setAttribute('title', 'This product is Made in India - Support Atmanirbhar Bharat! 🇮🇳');
+    } else {
+      // Not Made in India - Red badge with warning
+      badge.innerHTML = `
+        <div class="meraproduct-badge-inner meraproduct-badge-not-india">
+          <div class="meraproduct-badge-icon">🚫</div>
+          <div class="meraproduct-badge-text">
+            <div class="meraproduct-badge-title">NOT MADE IN INDIA</div>
+            <div class="meraproduct-badge-subtitle">Check other products</div>
+          </div>
+        </div>
+      `;
+      badge.setAttribute('title', 'This product is NOT Made in India');
+    }
+    
+    this.injectBadgeStyles();
+    return badge;
+  }
+
+  /**
+   * Inject CSS styles for the floating badge
+   */
+  injectBadgeStyles() {
+    // Check if styles already injected
+    if (document.getElementById('meraproduct-badge-styles')) return;
+    
+    const styles = document.createElement('style');
+    styles.id = 'meraproduct-badge-styles';
+    styles.textContent = `
+      .meraproduct-floating-badge {
+        position: fixed;
+        top: 120px;
+        right: 20px;
+        z-index: 999999;
+        animation: meraproduct-slideIn 0.5s ease-out, meraproduct-pulse 2s ease-in-out infinite;
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+      }
+      
+      .meraproduct-badge-inner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 3px solid;
+      }
+      
+      .meraproduct-badge-inner:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+      }
+      
+      /* Made in India - Green theme */
+      .meraproduct-badge-india {
+        background: linear-gradient(135deg, #138808 0%, #34a853 100%);
+        border-color: #0d6906;
+        color: white;
+      }
+      
+      /* Not Made in India - Bold Red theme */
+      .meraproduct-badge-not-india {
+        background: linear-gradient(135deg, #d32f2f 0%, #f44336 100%);
+        border-color: #b71c1c;
+        color: white;
+      }
+      
+      .meraproduct-badge-icon {
+        font-size: 32px;
+        line-height: 1;
+        animation: meraproduct-iconBounce 1s ease-in-out infinite;
+      }
+      
+      .meraproduct-badge-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      
+      .meraproduct-badge-title {
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        line-height: 1.2;
+      }
+      
+      .meraproduct-badge-confidence {
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0.95;
+        letter-spacing: 0.3px;
+      }
+      
+      .meraproduct-badge-subtitle {
+        font-size: 12px;
+        font-weight: 600;
+        opacity: 0.95;
+        letter-spacing: 0.3px;
+      }
+      
+      /* Animations */
+      @keyframes meraproduct-slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes meraproduct-pulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.02);
+        }
+      }
+      
+      @keyframes meraproduct-iconBounce {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+      
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .meraproduct-floating-badge {
+          top: auto;
+          bottom: 20px;
+          right: 10px;
+        }
+        
+        .meraproduct-badge-inner {
+          padding: 10px 16px;
+          gap: 10px;
+        }
+        
+        .meraproduct-badge-icon {
+          font-size: 28px;
+        }
+        
+        .meraproduct-badge-title {
+          font-size: 14px;
+        }
+        
+        .meraproduct-badge-confidence,
+        .meraproduct-badge-subtitle {
+          font-size: 10px;
+        }
+      }
+    `;
+    document.head.appendChild(styles);
+  }
+
+  /**
+   * Create Indian flag badge element (legacy method for compatibility)
    * @returns {HTMLElement} Badge element
    */
   createIndianBadge() {
-    const badge = document.createElement('div');
-    badge.className = 'meraproduct-badge';
-    badge.innerHTML = `
-      <div class="meraproduct-badge-content">
-        🇮🇳 <span class="meraproduct-text">Made in India</span>
-      </div>
-    `;
-    badge.setAttribute('title', 'This product is made in India - Support Atmanirbhar Bharat!');
-    return badge;
+    return this.createFloatingBadge(true, 1.0);
   }
 
   /**

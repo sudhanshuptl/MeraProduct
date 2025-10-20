@@ -82,23 +82,40 @@
   }
 
   /**
-   * Insert Indian badge into the page
+   * Insert floating badge into the page
    */
-  function insertIndianBadge(result) {
-    const badge = detector.createIndianBadge();
-    const location = findBadgeLocation();
+  function insertFloatingBadge(isMadeInIndia, result = null) {
+    // Remove any existing badge first
+    const existingBadge = document.querySelector('.meraproduct-floating-badge');
+    if (existingBadge) {
+      existingBadge.remove();
+    }
     
-    if (location) {
-      // Add Amazon-specific styling
-      badge.classList.add('meraproduct-amazon-badge');
-      location.insertAdjacentElement('afterend', badge);
-      
-      // Show success notification
+    const confidence = result ? result.confidence : 0;
+    const badge = detector.createFloatingBadge(isMadeInIndia, confidence);
+    
+    // Insert at the end of body for fixed positioning
+    document.body.appendChild(badge);
+    
+    // Show notification
+    if (isMadeInIndia) {
       detector.showNotification(
-        `🇮🇳 Made in India product detected! Confidence: ${Math.round(result.confidence * 100)}%`,
+        `🇮🇳 Made in India product detected! Confidence: ${Math.round(confidence * 100)}%`,
         'success'
       );
+    } else {
+      detector.showNotification(
+        `⚠️ This product is NOT Made in India`,
+        'info'
+      );
     }
+  }
+
+  /**
+   * Insert Indian badge into the page (legacy wrapper)
+   */
+  function insertIndianBadge(result) {
+    insertFloatingBadge(true, result);
   }
 
   /**
@@ -138,6 +155,11 @@
           confidence: result.confidence,
           indicator: result.indicator
         });
+      } else {
+        // Show "NOT MADE IN INDIA" badge for non-Indian products
+        console.log('[MeraProduct] Product is not Made in India - showing red badge.');
+        insertFloatingBadge(false, result);
+        hasProcessed = true;
       }
 
     } catch (error) {

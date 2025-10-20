@@ -84,23 +84,40 @@
   }
 
   /**
-   * Insert Indian badge into the page
+   * Insert floating badge into the page
    */
-  function insertIndianBadge(result) {
-    const badge = detector.createIndianBadge();
-    const location = findBadgeLocation();
+  function insertFloatingBadge(isMadeInIndia, result = null) {
+    // Remove any existing badge first
+    const existingBadge = document.querySelector('.meraproduct-floating-badge');
+    if (existingBadge) {
+      existingBadge.remove();
+    }
     
-    if (location) {
-      // Add Flipkart-specific styling
-      badge.classList.add('meraproduct-flipkart-badge');
-      location.insertAdjacentElement('afterend', badge);
-      
-      // Show success notification
+    const confidence = result ? result.confidence : 0;
+    const badge = detector.createFloatingBadge(isMadeInIndia, confidence);
+    
+    // Insert at the end of body for fixed positioning
+    document.body.appendChild(badge);
+    
+    // Show notification
+    if (isMadeInIndia) {
       detector.showNotification(
-        `🇮🇳 Made in India product detected! Confidence: ${Math.round(result.confidence * 100)}%`,
+        `🇮🇳 Made in India product detected! Confidence: ${Math.round(confidence * 100)}%`,
         'success'
       );
+    } else {
+      detector.showNotification(
+        `⚠️ This product is NOT Made in India`,
+        'info'
+      );
     }
+  }
+
+  /**
+   * Insert Indian badge into the page (legacy wrapper)
+   */
+  function insertIndianBadge(result) {
+    insertFloatingBadge(true, result);
   }
 
   /**
@@ -312,7 +329,11 @@
           logAndSendMessage(result, modalText);
           return;
         } else {
-          console.log('[MeraProduct] Product is not Made in India or could not determine origin.');
+          console.log('[MeraProduct] Product is not Made in India.');
+          // Show "NOT MADE IN INDIA" badge
+          insertFloatingBadge(false, result);
+          hasProcessed = true;
+          return;
         }
       } else {
         console.log('[MeraProduct] Modal did not appear or could not be read.');
@@ -348,7 +369,10 @@
       hasProcessed = true;
       logAndSendMessage(result, productInfo.allText);
     } else {
-      console.log('[MeraProduct] No Indian origin detected in fallback scan.');
+      console.log('[MeraProduct] No Indian origin detected in fallback scan - showing NOT MADE IN INDIA badge.');
+      // Show "NOT MADE IN INDIA" badge for non-Indian products
+      insertFloatingBadge(false, result);
+      hasProcessed = true;
     }
   }
 
@@ -400,9 +424,61 @@
    * @returns {Object} Detection result with isIndian and confidence
    */
   function analyzeManufacturingInfo(text) {
+    console.log('[MeraProduct] ========== ANALYZING MANUFACTURING INFO ==========');
+    console.log('[MeraProduct] Full modal text (first 500 chars):', text.substring(0, 500));
+    
     const lowerText = text.toLowerCase();
     
-    // Check for explicit "Made in India" or "Manufactured in India" statements (highest confidence)
+    // STEP 1: Extract all relevant information with detailed logging
+    console.log('[MeraProduct] --- Step 1: Extracting Information ---');
+    
+    // Extract Country of Origin
+    const countryRegex = /country\s+of\s+origin[\s:]*([^\n]+)/i;
+    const countryMatch = text.match(countryRegex);
+    const countryOfOrigin = countryMatch ? countryMatch[1].trim() : null;
+    console.log('[MeraProduct] Country of Origin extracted:', countryOfOrigin || 'NOT FOUND');
+    
+    // Extract manufacturer address
+    const manufacturerAddress = extractManufacturerAddress(text);
+    console.log('[MeraProduct] Manufacturer address extracted:', manufacturerAddress || 'NOT FOUND');
+    
+    // STEP 2: Check for explicit non-Indian countries
+    console.log('[MeraProduct] --- Step 2: Checking for Non-Indian Countries ---');
+    const nonIndianCountries = [
+      'china', 'usa', 'united states', 'korea', 'south korea', 'japan', 'taiwan',
+      'vietnam', 'thailand', 'malaysia', 'singapore', 'indonesia', 'philippines',
+      'hong kong', 'germany', 'france', 'italy', 'uk', 'united kingdom', 'mexico'
+    ];
+    
+    for (const country of nonIndianCountries) {
+      if (countryOfOrigin && countryOfOrigin.toLowerCase().includes(country)) {
+        console.log('[MeraProduct] ❌ NOT MADE IN INDIA - Country of Origin:', countryOfOrigin);
+        return {
+          isIndian: false,
+          confidence: 1.0,
+          indicator: `Country of Origin: ${countryOfOrigin}`,
+          manufacturer: manufacturerAddress
+        };
+      }
+    }
+    
+    // Also check manufacturer address for foreign countries
+    if (manufacturerAddress) {
+      for (const country of nonIndianCountries) {
+        if (manufacturerAddress.toLowerCase().includes(country)) {
+          console.log('[MeraProduct] ❌ NOT MADE IN INDIA - Manufacturer in:', country);
+          return {
+            isIndian: false,
+            confidence: 1.0,
+            indicator: `Manufactured in ${country.charAt(0).toUpperCase() + country.slice(1)}`,
+            manufacturer: manufacturerAddress
+          };
+        }
+      }
+    }
+    
+    // STEP 3: Check for explicit "Made in India" statements
+    console.log('[MeraProduct] --- Step 3: Checking for Explicit Indian Indicators ---');
     const explicitIndicators = [
       'made in india',
       'manufactured in india',
@@ -417,20 +493,24 @@
           isIndian: true,
           confidence: 1.0,
           indicator: indicator,
-          manufacturer: extractManufacturerAddress(text)
+          manufacturer: manufacturerAddress
         };
       }
     }
     
-    // Check for "Country of Origin: India"
+    // STEP 4: Check for "Country of Origin: India"
+    console.log('[MeraProduct] --- Step 4: Checking Country of Origin ---');
     const countryOfOriginRegex = /country\s+of\s+origin[\s:]*india/i;
     const hasCountryOfOrigin = countryOfOriginRegex.test(lowerText);
+    console.log('[MeraProduct] Country of Origin: India?', hasCountryOfOrigin);
     
-    // Check for manufacturer address containing India
-    const hasManufacturerIndia = lowerText.includes('manufacturer') && lowerText.includes('india');
-    const manufacturerAddress = hasManufacturerIndia ? extractManufacturerAddress(text) : null;
+    // STEP 5: Check if manufacturer address is Indian
+    console.log('[MeraProduct] --- Step 5: Checking Manufacturer Address ---');
+    const hasManufacturerIndia = manufacturerAddress && isIndianAddress(manufacturerAddress);
+    console.log('[MeraProduct] Manufacturer is Indian?', hasManufacturerIndia);
     
-    // Combined scoring logic
+    // STEP 6: Combined scoring logic
+    console.log('[MeraProduct] --- Step 6: Calculating Confidence ---');
     if (hasCountryOfOrigin && hasManufacturerIndia) {
       console.log('[MeraProduct] ✓ Country of Origin: India + Manufacturer in India (100% confidence)');
       return {
@@ -452,7 +532,7 @@
     }
     
     if (hasManufacturerIndia && manufacturerAddress) {
-      console.log('[MeraProduct] ⚠ Only Manufacturer address contains India (50% confidence)');
+      console.log('[MeraProduct] ✓ Manufacturer address is Indian (50% confidence)');
       return {
         isIndian: true,
         confidence: 0.50,
@@ -461,22 +541,114 @@
       };
     }
     
-    // Generic "Origin: India" fallback
+    // STEP 7: Generic "Origin: India" fallback
+    console.log('[MeraProduct] --- Step 7: Generic Origin Check ---');
     const originRegex = /(?:origin)[\s:]+([^\n,]+)/i;
     const match = text.match(originRegex);
-    if (match && match[1].toLowerCase().includes('india')) {
-      console.log('[MeraProduct] ✓ Origin: India (70% confidence)');
+    if (match) {
+      console.log('[MeraProduct] Origin field found:', match[1]);
+      if (match[1].toLowerCase().includes('india')) {
+        console.log('[MeraProduct] ✓ Origin: India (70% confidence)');
+        return {
+          isIndian: true,
+          confidence: 0.70,
+          indicator: 'Origin: India',
+          manufacturer: manufacturerAddress
+        };
+      }
+    }
+    
+    // STEP 8: Fallback to the generic detector
+    console.log('[MeraProduct] --- Step 8: Using Fallback Generic Detector ---');
+    const result = detector.detectFromText(text);
+    console.log('[MeraProduct] Generic detector result:', result);
+    
+    // If no Indian indicators found, explicitly mark as NOT Indian
+    if (!result.isIndian) {
+      console.log('[MeraProduct] ❌ NO INDIAN INDICATORS FOUND - Product is NOT Made in India');
       return {
-        isIndian: true,
-        confidence: 0.70,
-        indicator: 'Origin: India',
-        manufacturer: extractManufacturerAddress(text)
+        isIndian: false,
+        confidence: 0.8,
+        indicator: 'No Indian origin indicators found',
+        manufacturer: manufacturerAddress
       };
     }
     
-    // Fallback to the generic detector
-    console.log('[MeraProduct] Using fallback generic detector');
-    return detector.detectFromText(text);
+    console.log('[MeraProduct] ========== ANALYSIS COMPLETE ==========');
+    return result;
+  }
+
+  /**
+   * Check if an address appears to be Indian based on PIN codes, cities, states, etc.
+   * @param {string} address - The address text to check
+   * @returns {boolean} True if address appears to be Indian
+   */
+  function isIndianAddress(address) {
+    if (!address) return false;
+    
+    const lowerAddress = address.toLowerCase();
+    
+    // Check 1: Contains "India" explicitly
+    if (lowerAddress.includes('india')) return true;
+    
+    // Check 2: Indian PIN code (6 digits, range 100000-855999)
+    const pinCodeMatch = address.match(/\b[1-8]\d{5}\b/);
+    if (pinCodeMatch) {
+      const pinCode = parseInt(pinCodeMatch[0]);
+      if (pinCode >= 100000 && pinCode <= 855999) {
+        console.log('[MeraProduct] ✓ Indian PIN code detected:', pinCodeMatch[0]);
+        return true;
+      }
+    }
+    
+    // Check 3: Indian industrial areas and zones
+    const indianIndustrialAreas = [
+      'sipcot', 'sidco', 'midc', 'gidc', 'kasez', 'seepz', 'nepz',
+      'industrial estate', 'industrial area', 'industrial complex',
+      'export promotion', 'special economic zone', 'sez'
+    ];
+    
+    for (const area of indianIndustrialAreas) {
+      if (lowerAddress.includes(area)) {
+        console.log('[MeraProduct] ✓ Indian industrial area detected:', area);
+        return true;
+      }
+    }
+    
+    // Check 4: Major Indian cities (partial list of common manufacturing hubs)
+    const indianCities = [
+      'mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata',
+      'pune', 'ahmedabad', 'surat', 'jaipur', 'lucknow', 'kanpur', 'nagpur', 'indore',
+      'thane', 'bhopal', 'visakhapatnam', 'pimpri', 'patna', 'vadodara', 'ghaziabad',
+      'ludhiana', 'agra', 'nashik', 'faridabad', 'meerut', 'rajkot', 'varanasi',
+      'noida', 'gurugram', 'gurgaon', 'hosur', 'coimbatore', 'madurai', 'kochi',
+      'chandigarh', 'guwahati', 'thiruvananthapuram', 'trivandrum', 'mysore', 'mysuru',
+      'aurangabad', 'dhanbad', 'amritsar', 'ranchi', 'jodhpur', 'raipur', 'kota'
+    ];
+    
+    for (const city of indianCities) {
+      if (lowerAddress.includes(city)) {
+        console.log('[MeraProduct] ✓ Indian city detected:', city);
+        return true;
+      }
+    }
+    
+    // Check 5: Indian states (abbreviated or full names)
+    const indianStates = [
+      'maharashtra', 'tamil nadu', 'karnataka', 'kerala', 'gujarat', 'rajasthan',
+      'west bengal', 'madhya pradesh', 'uttar pradesh', 'bihar', 'andhra pradesh',
+      'telangana', 'punjab', 'haryana', 'jharkhand', 'odisha', 'uttarakhand',
+      'himachal pradesh', 'assam', 'chhattisgarh', 'goa', 'jammu', 'kashmir'
+    ];
+    
+    for (const state of indianStates) {
+      if (lowerAddress.includes(state)) {
+        console.log('[MeraProduct] ✓ Indian state detected:', state);
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   /**
@@ -486,7 +658,7 @@
     const patterns = [
       /manufacturer[^:]*:\s*([^\n]+)/i,
       /manufactured by[^:]*:\s*([^\n]+)/i,
-      /address[^:]*:\s*([^\n]+india[^\n]*)/i
+      /address[^:]*:\s*([^\n]+)/i
     ];
     
     for (const pattern of patterns) {
