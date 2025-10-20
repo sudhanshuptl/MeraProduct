@@ -10,6 +10,7 @@
   'use strict';
 
   const log = new Logger('Flipkart');
+  Logger.enableDebug();
   const detector = new OriginDetector();
   const storage = new ProductStorage();
   let hasProcessed = false;
@@ -19,7 +20,7 @@
   
   // If not in debug mode, show how to enable it
   if (!log.debugMode) {
-    console.log('%c💡 Tip: Enable debug mode in extension settings (click extension icon → ⚙️ → Debug Mode)', 
+    console.log('%c[MeraProduct] 💡 Tip: Enable debug mode in extension settings (click extension icon → ⚙️ → Debug Mode)', 
                 'color: #888; font-style: italic;');
   }
 
@@ -28,10 +29,10 @@
     if (message.action === 'updateDebugMode') {
       if (message.debugMode) {
         Logger.enableDebug();
-        console.log('%c✅ Debug Mode ENABLED from extension settings', 'color: #22c55e; font-weight: bold;');
+        console.log('%c[MeraProduct] ✅ Debug Mode ENABLED from extension settings', 'color: #22c55e; font-weight: bold;');
       } else {
         Logger.disableDebug();
-        console.log('%c⚠️ Debug Mode DISABLED from extension settings', 'color: #f59e0b; font-weight: bold;');
+        console.log('%c[MeraProduct] ⚠️ Debug Mode DISABLED from extension settings', 'color: #f59e0b; font-weight: bold;');
       }
     }
   });
@@ -532,9 +533,17 @@
     const lowerText = text.toLowerCase();
     
     // Extract all relevant information
-    const countryRegex = /country\s+of\s+origin[\s:]*([^\n]+)/i;
+    // Improved regex to capture only the country name, stopping at common delimiters
+    const countryRegex = /country\s+of\s+origin[\s:]*([A-Za-z\s]+?)(?=\s*(?:Manufacturer|Importer|Packer|Details|$|[A-Z]{2,}))/i;
     const countryMatch = text.match(countryRegex);
-    const countryOfOrigin = countryMatch ? countryMatch[1].trim() : null;
+    let countryOfOrigin = countryMatch ? countryMatch[1].trim() : null;
+    
+    // Fallback: if regex didn't work, try simpler pattern (just get next word(s) after "Country of Origin")
+    if (!countryOfOrigin || countryOfOrigin.length > 50) {
+      const simpleRegex = /country\s+of\s+origin[\s:]*([A-Za-z\s]{3,30})/i;
+      const simpleMatch = text.match(simpleRegex);
+      countryOfOrigin = simpleMatch ? simpleMatch[1].trim() : countryOfOrigin;
+    }
     
     const manufacturerAddress = extractManufacturerAddress(text);
     
@@ -548,8 +557,28 @@
       'hong kong', 'germany', 'france', 'italy', 'uk', 'united kingdom', 'mexico'
     ];
     
+    // Helper function to check if a country name appears as a complete word
+    const containsCountry = (text, country) => {
+      if (!text) return false;
+      const lowerText = text.toLowerCase();
+      // For multi-word countries, just use includes
+      if (country.includes(' ')) {
+        return lowerText.includes(country);
+      }
+      // For single-word countries, use word boundary regex to avoid false positives
+      // e.g., "uk" in "Taluk" or "china" in "chinaware"
+      
+      // Special handling for UK/U.K.
+      if (country === 'uk') {
+        return /\bu\.?k\.?\b/i.test(text) || /\bunited kingdom\b/i.test(text);
+      }
+      
+      const regex = new RegExp(`\\b${country}\\b`, 'i');
+      return regex.test(text);
+    };
+    
     for (const country of nonIndianCountries) {
-      if (countryOfOrigin && countryOfOrigin.toLowerCase().includes(country)) {
+      if (containsCountry(countryOfOrigin, country)) {
         log.warn(`NOT Made in India - Country: ${countryOfOrigin}`);
         log.groupEnd();
         return {
@@ -564,7 +593,7 @@
     // Also check manufacturer address for foreign countries
     if (manufacturerAddress) {
       for (const country of nonIndianCountries) {
-        if (manufacturerAddress.toLowerCase().includes(country)) {
+        if (containsCountry(manufacturerAddress, country)) {
           log.warn(`NOT Made in India - Manufacturer in ${country}`);
           log.groupEnd();
           return {
@@ -598,14 +627,21 @@
       }
     }
     
-    // Check for "Country of Origin: India"
+    // Check for "Country of Origin: India" or "Country: India"
     const countryOfOriginRegex = /country\s+of\s+origin[\s:]*india/i;
-    const hasCountryOfOrigin = countryOfOriginRegex.test(lowerText);
+    const countryIndiaRegex = /country[\s:]+india/i;
+    const hasCountryOfOriginInText = countryOfOriginRegex.test(lowerText) || countryIndiaRegex.test(lowerText);
+    
+    // Also check if the extracted country name is "India"
+    const hasCountryOfOriginExtracted = countryOfOrigin && countryOfOrigin.toLowerCase().trim() === 'india';
+    
+    const hasCountryOfOrigin = hasCountryOfOriginInText || hasCountryOfOriginExtracted;
     
     // Check if manufacturer address is Indian
     const hasManufacturerIndia = manufacturerAddress && isIndianAddress(manufacturerAddress);
     
-    log.debug('Country of Origin: India?', hasCountryOfOrigin);
+    log.debug('Country of Origin: India (regex)?', hasCountryOfOriginInText);
+    log.debug('Country of Origin: India (extracted)?', hasCountryOfOriginExtracted);
     log.debug('Manufacturer is Indian?', hasManufacturerIndia);
     
     // Combined scoring logic
@@ -661,22 +697,26 @@
     
     // Fallback to the generic detector
     log.debug('Using fallback generic detector');
+    log.debug('Text sample for detection:', text.substring(0, 300));
     const result = detector.detectFromText(text);
+    log.debug('Generic detector result:', result);
     
-    // If no Indian indicators found, explicitly mark as NOT Indian
-    if (!result.isIndian) {
-      log.warn('NOT Made in India - No indicators found');
+    // If Indian indicators found, return result
+    if (result.isIndian) {
+      log.success(`Made in India - ${result.indicator} (${Math.round(result.confidence * 100)}%)`);
       log.groupEnd();
-      return {
-        isIndian: false,
-        confidence: 0.8,
-        indicator: 'No Indian origin indicators found',
-        manufacturer: manufacturerAddress
-      };
+      return result;
     }
     
+    // If no Indian indicators found, explicitly mark as NOT Indian
+    log.warn('NOT Made in India - ' + text.substring(0, 200));
     log.groupEnd();
-    return result;
+    return {
+      isIndian: false,
+      confidence: 0.8,
+      indicator: 'No Indian origin indicators found',
+      manufacturer: manufacturerAddress
+    };
   }
 
   /**

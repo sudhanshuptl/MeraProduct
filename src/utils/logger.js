@@ -41,7 +41,7 @@ class Logger {
    * Format log message with emoji and context
    */
   format(emoji, message, ...args) {
-    return [`${emoji} [${this.moduleName}]`, message, ...args];
+    return [`${emoji} [MeraProduct][${this.moduleName}]`, message, ...args];
   }
 
   /**
@@ -117,7 +117,7 @@ class Logger {
    */
   data(label, obj) {
     if (this.debugMode) {
-      console.log(`🔍 [${this.moduleName}] ${label}:`, obj);
+      console.log(`🔍 [MeraProduct][${this.moduleName}] ${label}:`, obj);
     }
   }
 
@@ -126,7 +126,7 @@ class Logger {
    */
   table(label, data) {
     if (this.debugMode) {
-      console.log(`🔍 [${this.moduleName}] ${label}:`);
+      console.log(`🔍 [MeraProduct][${this.moduleName}] ${label}:`);
       console.table(data);
     }
   }

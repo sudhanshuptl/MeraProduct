@@ -23,7 +23,7 @@ class ProductStorage {
    */
   async saveProduct(product) {
     try {
-      console.log('[ProductStorage] Starting to save product:', {
+      console.log('[MeraProduct][ProductStorage] Starting to save product:', {
         name: product.name,
         url: product.url,
         site: product.site,
@@ -32,7 +32,7 @@ class ProductStorage {
       });
       
       const history = await this.getHistory();
-      console.log('[ProductStorage] Current history length:', history.length);
+      console.log('[MeraProduct][ProductStorage] Current history length:', history.length);
       
       // Create product entry
       const productEntry = {
@@ -53,11 +53,11 @@ class ProductStorage {
       
       if (existingIndex !== -1) {
         // Update existing entry
-        console.log('[ProductStorage] Updating existing product at index:', existingIndex);
+        console.log('[MeraProduct][ProductStorage] Updating existing product at index:', existingIndex);
         history[existingIndex] = productEntry;
       } else {
         // Add new entry at the beginning
-        console.log('[ProductStorage] Adding new product to history');
+        console.log('[MeraProduct][ProductStorage] Adding new product to history');
         history.unshift(productEntry);
       }
 
@@ -67,13 +67,13 @@ class ProductStorage {
       // Save to storage
       await chrome.storage.local.set({ [this.STORAGE_KEY]: limitedHistory });
       
-      console.log('✅ [ProductStorage] Product saved successfully! Total products:', limitedHistory.length);
+      console.log('✅ [MeraProduct][ProductStorage] Product saved successfully! Total products:', limitedHistory.length);
       console.log('   Storage Key:', this.STORAGE_KEY);
       console.log('   Product:', productEntry.name);
       
       return productEntry;
     } catch (error) {
-      console.error('❌ [ProductStorage] Error saving product:', error);
+      console.error('❌ [MeraProduct][ProductStorage] Error saving product:', error);
       throw error;
     }
   }
@@ -87,7 +87,7 @@ class ProductStorage {
       const result = await chrome.storage.local.get(this.STORAGE_KEY);
       return result[this.STORAGE_KEY] || [];
     } catch (error) {
-      console.error('❌ Error getting history:', error);
+      console.error('❌ [MeraProduct] Error getting history:', error);
       return [];
     }
   }
@@ -98,9 +98,9 @@ class ProductStorage {
   async clearHistory() {
     try {
       await chrome.storage.local.remove(this.STORAGE_KEY);
-      console.log('✅ History cleared');
+      console.log('✅ [MeraProduct] History cleared');
     } catch (error) {
-      console.error('❌ Error clearing history:', error);
+      console.error('❌ [MeraProduct] Error clearing history:', error);
       throw error;
     }
   }
@@ -134,9 +134,9 @@ class ProductStorage {
       const history = await this.getHistory();
       const filtered = history.filter(p => p.id !== id);
       await chrome.storage.local.set({ [this.STORAGE_KEY]: filtered });
-      console.log('✅ Product deleted:', id);
+      console.log('✅ [MeraProduct] Product deleted:', id);
     } catch (error) {
-      console.error('❌ Error deleting product:', error);
+      console.error('❌ [MeraProduct] Error deleting product:', error);
       throw error;
     }
   }

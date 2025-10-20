@@ -19,42 +19,182 @@ class OriginDetector {
    * @returns {Object} Origin detection result
    */
   detectFromText(text) {
-    if (!text) return { isIndian: false, confidence: 0 };
+    if (!text) {
+      console.log('[MeraProduct][OriginDetector] ✗ No text provided');
+      return { isIndian: false, confidence: 0 };
+    }
 
-    const lowerText = text.toLowerCase();
+    // Clean up text: normalize whitespace and add spaces after common patterns
+    let cleanedText = text
+      .replace(/([a-z])([A-Z])/g, '$1 $2')  // Add space between camelCase
+      .replace(/([a-z])(\d)/g, '$1 $2')      // Add space between letter and number
+      .replace(/(\d)([a-z])/gi, '$1 $2')     // Add space between number and letter
+      .replace(/([:\)])([A-Z])/g, '$1 $2')   // Add space after : or ) before capital
+      .replace(/\s+/g, ' ')                   // Normalize multiple spaces to single space
+      .trim();
+
+    // Log the actual text being analyzed for debugging
+    console.log('[MeraProduct][OriginDetector] 📝 Analyzing text (first 500 chars):', cleanedText.substring(0, 500));
+    console.log('[MeraProduct][OriginDetector] 📝 Text length:', cleanedText.length);
+
+    const lowerText = cleanedText.toLowerCase();
     
-    // Strong indicators for Indian origin
+    // Strong indicators for Indian origin (all case-insensitive with /i flag)
     const strongIndianIndicators = [
-      /made in india/i,
-      /manufactured in india/i, 
-      /(country of origin|country):?\s*india/i,
-      /origin:?\s*india/i,
+      /made\s+in\s+india/i,
+      /manufactured\s+in\s+india/i,
+      /country\s+of\s+origin[:\s]*india/i,
+      /country[:\s]+india/i,
+      /origin[:\s]+india/i,
+      /origin:\s*india/i,  // Specific for "Origin: India" or "Origin:India"
+      /\bIndia\s*Manufacturer/i,
       /भारत में निर्मित/i,
       /मेड इन इंडिया/i
     ];
+    
+    console.log('[MeraProduct][OriginDetector] 🔍 Checking strong indicators...');
 
-    // Weak indicators for Indian origin
-    const weakIndianIndicators = [
-      'indian',
-      'bharati',
-      'desi',
-      'swadeshi'
+    // All 28 States of India (case-insensitive)
+    const indianStates = [
+      'andhra pradesh', 'arunachal pradesh', 'assam', 'bihar', 'chhattisgarh',
+      'goa', 'gujarat', 'haryana', 'himachal pradesh', 'jharkhand',
+      'karnataka', 'kerala', 'madhya pradesh', 'maharashtra', 'manipur',
+      'meghalaya', 'mizoram', 'nagaland', 'odisha', 'punjab',
+      'rajasthan', 'sikkim', 'tamil nadu', 'telangana', 'tripura',
+      'uttar pradesh', 'uttarakhand', 'west bengal'
     ];
 
-    // Check strong indicators
-    for (const indicator of strongIndianIndicators) {
-      if (lowerText.includes(indicator)) {
-        return { isIndian: true, confidence: 0.9, indicator };
+    // All 8 Union Territories of India (case-insensitive)
+    const indianUTs = [
+      'andaman and nicobar islands', 'chandigarh', 'dadra and nagar haveli and daman and diu',
+      'delhi', 'jammu and kashmir', 'ladakh', 'lakshadweep', 'puducherry'
+    ];
+
+    // Major Indian Cities (Top 100+ cities, industrial hubs, and popular areas)
+    const indianCities = [
+      // Metro cities
+      'mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata', 'pune', 'ahmedabad',
+      
+      // Tier 1 cities
+      'surat', 'jaipur', 'lucknow', 'kanpur', 'nagpur', 'visakhapatnam', 'indore', 'thane', 'bhopal',
+      'patna', 'vadodara', 'ghaziabad', 'ludhiana', 'agra', 'nashik', 'faridabad', 'meerut', 'rajkot',
+      'varanasi', 'srinagar', 'amritsar', 'allahabad', 'prayagraj', 'ranchi', 'howrah', 'coimbatore',
+      'jabalpur', 'gwalior', 'vijayawada', 'jodhpur', 'madurai', 'raipur', 'kota', 'chandigarh',
+      
+      // Tier 2 cities & Industrial hubs
+      'gurgaon', 'gurugram', 'noida', 'greater noida', 'navi mumbai', 'mysore', 'mysuru', 'mangalore',
+      'hubli', 'belgaum', 'gulbarga', 'davangere', 'bellary', 'shimoga', 'tumkur', 'raichur',
+      'kochi', 'cochin', 'thiruvananthapuram', 'kozhikode', 'calicut', 'thrissur', 'kollam', 'kannur',
+      'tiruchirappalli', 'tiruppur', 'salem', 'erode', 'vellore', 'tirunelveli', 'thanjavur', 'dindigul',
+      'aurangabad', 'solapur', 'amravati', 'nanded', 'kolhapur', 'sangli', 'jalgaon', 'akola',
+      'rajkot', 'bhavnagar', 'jamnagar', 'gandhinagar', 'anand', 'bharuch', 'vapi', 'morbi',
+      'udaipur', 'ajmer', 'bikaner', 'alwar', 'bhilwara', 'sikar', 'pali', 'sri ganganagar',
+      'dehradun', 'haridwar', 'roorkee', 'haldwani', 'rudrapur', 'kashipur', 'rishikesh',
+      'panipat', 'ambala', 'karnal', 'rohtak', 'hisar', 'sonipat', 'panchkula', 'yamunanagar',
+      'jalandhar', 'patiala', 'bathinda', 'mohali', 'pathankot', 'hoshiarpur', 'batala', 'moga',
+      'guwahati', 'silchar', 'dibrugarh', 'jorhat', 'tezpur', 'nagaon', 'tinsukia',
+      'rourkela', 'cuttack', 'bhubaneswar', 'berhampur', 'sambalpur', 'balasore', 'puri',
+      'dhanbad', 'bokaro', 'jamshedpur', 'giridih', 'hazaribagh', 'ramgarh', 'deoghar',
+      'raigarh', 'bhilai', 'bilaspur', 'korba', 'durg', 'rajnandgaon', 'jagdalpur',
+      'gaya', 'bhagalpur', 'muzaffarpur', 'darbhanga', 'purnia', 'bihar sharif', 'arrah',
+      'gorakhpur', 'aligarh', 'moradabad', 'saharanpur', 'bareilly', 'firozabad', 'jhansi',
+      'mathura', 'rampur', 'shahjahanpur', 'farrukhabad', 'muzaffarnagar', 'bulandshahr',
+      'ghazipur', 'unnao', 'sitapur', 'etawah', 'orai', 'sambhal', 'budaun',
+      'warangal', 'nizamabad', 'karimnagar', 'ramagundam', 'khammam', 'mahbubnagar', 'nalgonda',
+      'guntur', 'nellore', 'kurnool', 'kadapa', 'rajahmundry', 'kakinada', 'tirupati', 'anantapur',
+      'imphal', 'aizawl', 'agartala', 'shillong', 'kohima', 'itanagar', 'gangtok', 'port blair',
+      
+      // Major Industrial Areas/Zones
+      'manesar', 'bawal', 'neemrana', 'bhiwadi', 'sanand', 'mundra', 'pithampur', 'dewas',
+      'halol', 'hosur', 'sriperumbudur', 'oragadam', 'mahindra world city', 'chakan', 'ranjangaon',
+      'taloja', 'khopoli', 'silvassa', 'verna', 'bicholim', 'dharwad', 'peenya', 'whitefield',
+      'electronic city', 'sipcot', 'mahape', 'rabale', 'turbhe', 'sanpada', 'vashi', 'airoli',
+      'ghiloth', 'tapukara', 'dharuhera', 'kundli', 'rai', 'bahadurgarh', 'binola', 'farrukhnagar',
+      'baddi', 'parwanoo', 'kala amb', 'nalagarh', 'solan', 'paonta sahib', 'dappar',
+      'haridwar industrial estate', 'sidcul', 'iie pantnagar', 'kashipur industrial area',
+      'balanagar', 'jeedimetla', 'patancheru', 'medchal', 'pashamylaram', 'bollaram',
+      'jejuri', 'khed', 'kurkumbh', 'shikrapur', 'rajgurunagar', 'talegaon', 'urse',
+      'waluj', 'chikalthana', 'shendra', 'bidkin', 'paithan'
+    ];
+
+    // Industrial area keywords
+    const industrialKeywords = [
+      'industrial area', 'industrial estate', 'industrial zone', 'gidc', 'midc', 'sipcot',
+      'sidcul', 'riico', 'hsiidc', 'kiadb', 'apiic', 'upsidc', 'mpidc', 'gmidc',
+      'industrial park', 'export processing zone', 'special economic zone', 'sez',
+      'software park', 'tech park', 'it park', 'cyber park', 'infotech park'
+    ];
+
+    // Create regex patterns for states (case-insensitive)
+    const statePattern = new RegExp(`\\b(${indianStates.join('|')})\\b`, 'i');
+    
+    // Create regex patterns for UTs (case-insensitive)
+    const utPattern = new RegExp(`\\b(${indianUTs.join('|')})\\b`, 'i');
+    
+    // Create regex patterns for cities (case-insensitive)
+    const cityPattern = new RegExp(`\\b(${indianCities.join('|')})\\b`, 'i');
+    
+    // Create regex patterns for industrial keywords (case-insensitive)
+    const industrialPattern = new RegExp(`\\b(${industrialKeywords.join('|')})\\b`, 'i');
+
+    // Indian PIN code pattern (6 digits)
+    const pinCodePattern = /\b[1-9]\d{5}\b/i;
+
+    // Manufacturer address pattern with Indian locations
+    const manufacturerIndiaPattern = /manufactured\s+by[:\s]+[^,]+(india|bharat|${indianStates.slice(0, 5).join('|')})/i;
+
+    // Check strong indicators first (highest confidence)
+    for (let i = 0; i < strongIndianIndicators.length; i++) {
+      const indicator = strongIndianIndicators[i];
+      if (indicator.test(text)) {
+        console.log(`[OriginDetector] ✓ Strong indicator #${i} matched:`, indicator.source.substring(0, 50));
+        return { isIndian: true, confidence: 0.95, indicator: 'Made in India' };
       }
     }
+    console.log('[MeraProduct][OriginDetector] ✗ No strong indicators matched');
 
-    // Check weak indicators
-    for (const indicator of weakIndianIndicators) {
-      if (lowerText.includes(indicator)) {
-        return { isIndian: true, confidence: 0.6, indicator };
-      }
+    // Check for Indian states (very high confidence)
+    console.log('[MeraProduct][OriginDetector] 🔍 Checking for Indian states...');
+    if (statePattern.test(text)) {
+      const match = text.match(statePattern);
+      console.log('[MeraProduct][OriginDetector] ✓ Indian state detected:', match[0]);
+      return { isIndian: true, confidence: 0.92, indicator: `State: ${match[0]}` };
+    }
+    console.log('[MeraProduct][OriginDetector] ✗ No Indian states found');
+
+    // Check for Indian UTs (very high confidence)
+    console.log('[MeraProduct][OriginDetector] 🔍 Checking for Indian UTs...');
+    if (utPattern.test(text)) {
+      const match = text.match(utPattern);
+      console.log('[MeraProduct][OriginDetector] ✓ Indian UT detected:', match[0]);
+      return { isIndian: true, confidence: 0.92, indicator: `UT: ${match[0]}` };
+    }
+    console.log('[MeraProduct][OriginDetector] ✗ No Indian UTs found');
+
+    // Check for Indian cities (high confidence)
+    console.log('[MeraProduct][OriginDetector] 🔍 Checking for Indian cities...');
+    if (cityPattern.test(text)) {
+      const match = text.match(cityPattern);
+      console.log('[MeraProduct][OriginDetector] ✓ Indian city detected:', match[0]);
+      return { isIndian: true, confidence: 0.88, indicator: `City: ${match[0]}` };
+    }
+    console.log('[MeraProduct][OriginDetector] ✗ No Indian cities found');
+
+    // Check for industrial area keywords (medium-high confidence)
+    if (industrialPattern.test(text)) {
+      const match = text.match(industrialPattern);
+      console.log('[MeraProduct][OriginDetector] ✓ Indian industrial area detected:', match[0]);
+      return { isIndian: true, confidence: 0.85, indicator: `Industrial: ${match[0]}` };
     }
 
+    // Check for Indian PIN codes (medium confidence - could be false positive)
+    if (pinCodePattern.test(text)) {
+      const match = text.match(pinCodePattern);
+      console.log('[MeraProduct][OriginDetector] ✓ Indian PIN code detected:', match[0]);
+      return { isIndian: true, confidence: 0.75, indicator: `PIN: ${match[0]}` };
+    }
+
+    console.log('[MeraProduct][OriginDetector] ✗ No Indian origin indicators found');
     return { isIndian: false, confidence: 0 };
   }
 
