@@ -389,27 +389,30 @@
   /**
    * Analyze manufacturing info text to determine if product is Made in India.
    * More robust than the generic detector.
+   * 
+   * Confidence Scoring:
+   * - 100%: Country of Origin: India + Manufacturer in India (both present)
+   * - 100%: Explicit "Made in India" or "Manufactured in India"
+   * - 70%: Country of Origin: India (alone, without manufacturer info)
+   * - 50%: Only Manufacturer address contains India (less certain)
+   * 
    * @param {string} text - The text to analyze
    * @returns {Object} Detection result with isIndian and confidence
    */
   function analyzeManufacturingInfo(text) {
     const lowerText = text.toLowerCase();
     
-    // Strong positive indicators
-    const strongIndicators = [
-      'country of origin: india',
-      'country of origin india',
-      'manufactured in india',
+    // Check for explicit "Made in India" or "Manufactured in India" statements (highest confidence)
+    const explicitIndicators = [
       'made in india',
-      'origin: india',
+      'manufactured in india',
       'मेड इन इंडिया',
       'भारत में निर्मित'
     ];
     
-    // Check for strong indicators
-    for (const indicator of strongIndicators) {
+    for (const indicator of explicitIndicators) {
       if (lowerText.includes(indicator)) {
-        console.log('[MeraProduct] Strong indicator found:', indicator);
+        console.log('[MeraProduct] ✓ Explicit indicator found:', indicator);
         return {
           isIndian: true,
           confidence: 1.0,
@@ -419,31 +422,56 @@
       }
     }
     
-    // Check if "Country of Origin" or "Origin" is followed by "India"
-    const originRegex = /(?:country of origin|origin)[\s:]+([^\n,]+)/i;
-    const match = text.match(originRegex);
-    if (match && match[1].toLowerCase().includes('india')) {
-      console.log('[MeraProduct] Origin regex matched India');
+    // Check for "Country of Origin: India"
+    const countryOfOriginRegex = /country\s+of\s+origin[\s:]*india/i;
+    const hasCountryOfOrigin = countryOfOriginRegex.test(lowerText);
+    
+    // Check for manufacturer address containing India
+    const hasManufacturerIndia = lowerText.includes('manufacturer') && lowerText.includes('india');
+    const manufacturerAddress = hasManufacturerIndia ? extractManufacturerAddress(text) : null;
+    
+    // Combined scoring logic
+    if (hasCountryOfOrigin && hasManufacturerIndia) {
+      console.log('[MeraProduct] ✓ Country of Origin: India + Manufacturer in India (100% confidence)');
       return {
         isIndian: true,
-        confidence: 0.95,
-        indicator: 'Country of Origin: India',
-        manufacturer: extractManufacturerAddress(text)
+        confidence: 1.0,
+        indicator: 'Country of Origin: India + Manufacturer in India',
+        manufacturer: manufacturerAddress
       };
     }
     
-    // Check manufacturer address for India
-    if (lowerText.includes('manufacturer') && lowerText.includes('india')) {
-      const addressMatch = text.match(/manufacturer[^:]*:?\s*([^.]+india[^.]*)/i);
-      if (addressMatch) {
-        console.log('[MeraProduct] Manufacturer address contains India');
-        return {
-          isIndian: true,
-          confidence: 0.85,
-          indicator: 'Manufacturer address in India',
-          manufacturer: addressMatch[1].trim()
-        };
-      }
+    if (hasCountryOfOrigin) {
+      console.log('[MeraProduct] ✓ Country of Origin: India (70% confidence)');
+      return {
+        isIndian: true,
+        confidence: 0.70,
+        indicator: 'Country of Origin: India',
+        manufacturer: manufacturerAddress
+      };
+    }
+    
+    if (hasManufacturerIndia && manufacturerAddress) {
+      console.log('[MeraProduct] ⚠ Only Manufacturer address contains India (50% confidence)');
+      return {
+        isIndian: true,
+        confidence: 0.50,
+        indicator: 'Manufacturer address in India',
+        manufacturer: manufacturerAddress
+      };
+    }
+    
+    // Generic "Origin: India" fallback
+    const originRegex = /(?:origin)[\s:]+([^\n,]+)/i;
+    const match = text.match(originRegex);
+    if (match && match[1].toLowerCase().includes('india')) {
+      console.log('[MeraProduct] ✓ Origin: India (70% confidence)');
+      return {
+        isIndian: true,
+        confidence: 0.70,
+        indicator: 'Origin: India',
+        manufacturer: extractManufacturerAddress(text)
+      };
     }
     
     // Fallback to the generic detector
@@ -556,7 +584,7 @@
 
       // Set up observer for dynamic content
       setupObserver();
-    }, 10000); // 10 second delay
+    }, 2000); // 10 second delay
 
     // Handle navigation in single-page apps
     let currentUrl = window.location.href;
