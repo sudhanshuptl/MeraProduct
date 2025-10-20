@@ -10,7 +10,6 @@
   'use strict';
 
   const log = new Logger('Flipkart');
-  Logger.enableDebug();
   const detector = new OriginDetector();
   const storage = new ProductStorage();
   let hasProcessed = false;
@@ -208,18 +207,7 @@
       log.warn('Cannot save product - no title found');
     }
     
-    // Show notification
-    if (isMadeInIndia) {
-      detector.showNotification(
-        `🇮🇳 Made in India product detected! Confidence: ${Math.round(confidence * 100)}%`,
-        'success'
-      );
-    } else {
-      detector.showNotification(
-        `⚠️ This product is NOT Made in India`,
-        'info'
-      );
-    }
+    // Badge already shows the detection result, no need for extra notifications
   }
 
   /**

@@ -81,6 +81,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       clearData().then(() => sendResponse({ success: true }));
       return true; // Async response
       
+    case 'highlightExtensionIcon':
+      handleHighlightExtensionIcon(message, sender);
+      sendResponse({ success: true });
+      break;
+      
     default:
       console.warn('[MeraProduct] Unknown message type:', message.type);
   }
@@ -109,19 +114,8 @@ function handleIndianProductDetected(message, sender) {
   // Update badge
   updateBadge(sender.tab?.id, '🇮🇳');
 
-  // Show notification if enabled
-  chrome.storage.local.get(['showNotifications'], (data) => {
-    if (data.showNotifications !== false) {
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: chrome.runtime.getURL('assets/icons/icon48.png'),
-        title: 'Made in India Product Found!',
-        message: `🇮🇳 ${message.title.substring(0, 50)}${message.title.length > 50 ? '...' : ''}`
-      }).catch(err => {
-        console.warn('[MeraProduct] Notification error:', err);
-      });
-    }
-  });
+  // Note: Floating badge on page already shows detection result
+  // No need for browser notification as it's redundant
 
   // Store detection data
   chrome.storage.local.get(['detectionHistory'], (data) => {
@@ -343,5 +337,42 @@ chrome.runtime.onStartup.addListener(() => {
     toggleExtension(extensionState.isEnabled);
   });
 });
+
+/**
+ * Handle badge click - highlight extension icon
+ * Creates an animated badge effect to draw user's attention to the extension icon
+ */
+function handleHighlightExtensionIcon(message, sender) {
+  const tabId = sender.tab?.id;
+  
+  if (!tabId) return;
+  
+  // Flash the badge with a pulsing animation
+  let flashCount = 0;
+  const maxFlashes = 6;
+  
+  const flashInterval = setInterval(() => {
+    if (flashCount >= maxFlashes) {
+      clearInterval(flashInterval);
+      // Set final badge
+      if (message.productData?.isMadeInIndia) {
+        chrome.action.setBadgeText({ text: '🇮🇳', tabId: tabId });
+        chrome.action.setBadgeBackgroundColor({ color: '#138808', tabId: tabId });
+      }
+      return;
+    }
+    
+    // Alternate between highlighted and normal
+    if (flashCount % 2 === 0) {
+      chrome.action.setBadgeText({ text: '👆', tabId: tabId });
+      chrome.action.setBadgeBackgroundColor({ color: '#ff9933', tabId: tabId });
+    } else {
+      chrome.action.setBadgeText({ text: '🇮🇳', tabId: tabId });
+      chrome.action.setBadgeBackgroundColor({ color: '#138808', tabId: tabId });
+    }
+    
+    flashCount++;
+  }, 400);
+}
 
 console.log('[MeraProduct] Background service worker loaded');

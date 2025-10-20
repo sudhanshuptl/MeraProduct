@@ -148,18 +148,7 @@
       }
     }
     
-    // Show notification
-    if (isMadeInIndia) {
-      detector.showNotification(
-        `🇮🇳 Made in India product detected! Confidence: ${confidence}%`,
-        'success'
-      );
-    } else {
-      detector.showNotification(
-        `⚠️ This product is NOT Made in India`,
-        'info'
-      );
-    }
+    // Badge already shows the detection result, no need for extra notifications
   }
 
   /**

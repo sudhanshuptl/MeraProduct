@@ -244,7 +244,7 @@ class OriginDetector {
           </div>
         </div>
       `;
-      badge.setAttribute('title', 'This product is Made in India - Support Atmanirbhar Bharat! 🇮🇳');
+      badge.setAttribute('title', 'Click to view product history - Made in India 🇮🇳');
     } else {
       // Not Made in India - Red badge with warning
       badge.innerHTML = `
@@ -256,8 +256,42 @@ class OriginDetector {
           </div>
         </div>
       `;
-      badge.setAttribute('title', 'This product is NOT Made in India');
+      badge.setAttribute('title', 'Click to view product history - Not Made in India');
     }
+    
+    // Add click handler to open extension popup
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent event bubbling
+      console.log('[MeraProduct] Badge clicked!');
+      
+      // Show notification to click extension icon
+      this.showNotification(
+        '👆 Click the MeraProduct icon (🇮🇳) in your browser toolbar to view product history and stats!',
+        'info',
+        5000
+      );
+      
+      console.log('[MeraProduct] Notification displayed');
+      
+      // Send message to background to flash the extension icon
+      chrome.runtime.sendMessage({ 
+        action: 'highlightExtensionIcon',
+        productData: {
+          isMadeInIndia: isMadeInIndia,
+          confidence: confidence
+        }
+      }).then(() => {
+        console.log('[MeraProduct] Icon flash requested');
+      }).catch((error) => {
+        console.log('[MeraProduct] Background script not responding:', error);
+      });
+      
+      // Add a visual feedback animation to the badge
+      badge.style.animation = 'none';
+      setTimeout(() => {
+        badge.style.animation = '';
+      }, 10);
+    });
     
     this.injectBadgeStyles();
     return badge;
@@ -292,11 +326,17 @@ class OriginDetector {
         cursor: pointer;
         transition: all 0.3s ease;
         border: 3px solid;
+        user-select: none;
       }
       
       .meraproduct-badge-inner:hover {
-        transform: scale(1.05);
-        filter: brightness(1.1);
+        transform: scale(1.08) translateY(-2px);
+        filter: brightness(1.15);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      }
+      
+      .meraproduct-badge-inner:active {
+        transform: scale(1.02);
       }
       
       /* Made in India - Green theme */
@@ -420,13 +460,93 @@ class OriginDetector {
    * @param {string} message - Message to show
    * @param {string} type - Notification type (success, info, warning)
    */
-  showNotification(message, type = 'success') {
-    // Send message to background script for notification
+  showNotification(message, type = 'success', duration = 5000) {
+    // Create in-page notification toast
+    const notification = document.createElement('div');
+    notification.className = `meraproduct-notification meraproduct-notification-${type}`;
+    notification.textContent = message;
+    
+    // Inject notification styles if not already present
+    if (!document.getElementById('meraproduct-notification-styles')) {
+      const notifStyles = document.createElement('style');
+      notifStyles.id = 'meraproduct-notification-styles';
+      notifStyles.textContent = `
+        .meraproduct-notification {
+          position: fixed;
+          top: 80px;
+          right: 20px;
+          max-width: 400px;
+          padding: 16px 20px;
+          border-radius: 8px;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-size: 14px;
+          font-weight: 500;
+          color: white;
+          z-index: 999998;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          animation: meraproduct-notificationSlideIn 0.3s ease-out;
+          line-height: 1.5;
+        }
+        
+        .meraproduct-notification-success {
+          background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        }
+        
+        .meraproduct-notification-info {
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+        
+        .meraproduct-notification-warning {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .meraproduct-notification-error {
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        @keyframes meraproduct-notificationSlideIn {
+          from {
+            transform: translateX(450px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes meraproduct-notificationSlideOut {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(450px);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(notifStyles);
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Auto-dismiss after duration
+    setTimeout(() => {
+      notification.style.animation = 'meraproduct-notificationSlideOut 0.3s ease-in';
+      setTimeout(() => {
+        notification.remove();
+      }, 300);
+    }, duration);
+    
+    // Also send message to background script for browser notification (optional)
     if (typeof chrome !== 'undefined' && chrome.runtime) {
       chrome.runtime.sendMessage({
         type: 'SHOW_NOTIFICATION',
         message: message,
         notificationType: type
+      }).catch(() => {
+        // Silently fail if background script doesn't respond
       });
     }
   }
