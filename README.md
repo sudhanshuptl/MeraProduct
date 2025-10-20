@@ -82,9 +82,30 @@ After the initial build, you only need to **reload the extension** in `chrome://
 
 ---
 
-## 🙌 Contributing
+## � Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) folder:
+
+- **[Documentation Index](docs/README.md)** - Complete documentation navigation
+- **[Usage Guide](docs/guides/USAGE_GUIDE.md)** - How to use all features
+- **[Clickable Badge Guide](docs/guides/CLICKABLE_BADGE_GUIDE.md)** - Interactive badge system
+- **[Debug Mode Guide](docs/debug/DEBUG_MODE_GUIDE.md)** - Troubleshooting and debugging
+- **[Feature Documentation](docs/features/)** - Detailed feature descriptions
+- **[Bug Fixes](docs/fixes/)** - History of fixes and improvements
+
+**[📖 View Full Documentation Index →](docs/README.md)**
+
+---
+
+## �🙌 Contributing
 
 Contributions are welcome! Please open a pull request or raise an issue with site support suggestions or feature improvements.
+
+### For Contributors
+1. Review the [Documentation Index](docs/README.md) to understand the project
+2. Check [GitHub Issues](https://github.com/sudhanshuptl/MeraProduct/issues) for open tasks
+3. Follow the coding guidelines in [Copilot Instructions](.github/copilot-instructions.md)
+4. Use [Debug Mode](docs/debug/DEBUG_MODE_GUIDE.md) for testing your changes
 
 ---
 
