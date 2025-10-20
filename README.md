@@ -82,7 +82,7 @@ After the initial build, you only need to **reload the extension** in `chrome://
 
 ---
 
-## � Documentation
+## 📖 Documentation
 
 Comprehensive documentation is available in the [`docs/`](docs/) folder:
 
@@ -94,6 +94,37 @@ Comprehensive documentation is available in the [`docs/`](docs/) folder:
 - **[Bug Fixes](docs/fixes/)** - History of fixes and improvements
 
 **[📖 View Full Documentation Index →](docs/README.md)**
+
+---
+
+## 🚀 Chrome Web Store Deployment
+
+Ready to deploy MeraProduct to the Chrome Web Store? Everything is set up for you!
+
+### Quick Deploy
+```bash
+# Create production-ready package
+npm run build:production
+
+# This generates:
+# ✅ meraproduct-v1.0.0.zip (ready for Chrome Web Store)
+# ✅ DEPLOYMENT_CHECKLIST.txt (submission guide)
+```
+
+### Deployment Resources
+- **[Quick Deploy Guide](QUICK_DEPLOY.md)** - 3-step deployment process
+- **[Full Deployment Guide](docs/guides/CHROME_STORE_DEPLOYMENT.md)** - Comprehensive submission guide with store listing templates
+- **[Deployment Checklist](DEPLOYMENT_CHECKLIST.txt)** - Auto-generated submission checklist
+
+### What's Included
+✅ Production-optimized ZIP package (49 KB)  
+✅ All required icons (16x16, 32x32, 48x48, 128x128)  
+✅ Validated manifest.json  
+✅ Store listing templates  
+✅ Privacy policy template  
+✅ Screenshot guidelines  
+
+**Ready to publish?** Follow the [Quick Deploy Guide](QUICK_DEPLOY.md) to upload to Chrome Web Store!
 
 ---
 
