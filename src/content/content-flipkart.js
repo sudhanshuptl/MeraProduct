@@ -1,15 +1,26 @@
 /**
  * MeraProduct Content Script - Flipkart
  * Detects Made in India products on Flipkart pages
+ * 
+ * Debug Mode: To enable detailed logs, run in console:
+ * Logger.enableDebug()
  */
 
 (function() {
   'use strict';
 
-  console.log('[MeraProduct] ===== FLIPKART SCRIPT INJECTED ===== URL:', window.location.href);
-  
+  const log = new Logger('Flipkart');
   const detector = new OriginDetector();
   let hasProcessed = false;
+
+  // Show simple info message
+  log.info('MeraProduct loaded' + (log.debugMode ? ' (Debug Mode ON)' : ''));
+  
+  // If not in debug mode, show how to enable it
+  if (!log.debugMode) {
+    console.log('%c💡 Tip: Enable debug mode for detailed logs → Logger.enableDebug()', 
+                'color: #888; font-style: italic;');
+  }
 
   // Flipkart-specific selectors
   const FLIPKART_SELECTORS = {
@@ -126,7 +137,7 @@
    */
   async function processPage() {
     if (hasProcessed) return;
-    console.log('[MeraProduct] Starting page process for Flipkart...');
+    log.debug('Starting page process...');
 
     try {
       // First, check if the Specifications section is already loaded (generic check)
@@ -134,10 +145,10 @@
                                 .find(btn => btn.textContent.trim() === 'Read More');
       
       if (readMoreButton) {
-        console.log('[MeraProduct] Specifications section already loaded. Processing...');
+        log.debug('Specifications section already loaded');
         await performManufacturingInfoClick();
       } else {
-        console.log('[MeraProduct] Specifications section not yet loaded. Setting up MutationObserver...');
+        log.debug('Waiting for Specifications section...');
         
         // Set up observer to watch for the Specifications section to load
         const observer = new MutationObserver(async (mutations, obs) => {
@@ -146,7 +157,7 @@
                                .find(btn => btn.textContent.trim() === 'Read More');
           
           if (readMore && !hasProcessed) {
-            console.log('[MeraProduct] Specifications section loaded via MutationObserver!');
+            log.debug('Specifications section loaded dynamically');
             obs.disconnect(); // Stop observing once we found it
             await performManufacturingInfoClick();
           }
@@ -161,14 +172,14 @@
         // Set a timeout to disconnect the observer after 10 seconds
         setTimeout(() => {
           observer.disconnect();
-          console.log('[MeraProduct] MutationObserver timeout reached.');
+          log.debug('MutationObserver timeout reached');
           // Try fallback method
           fallbackDetection();
         }, 10000);
       }
 
     } catch (error) {
-      console.error('[MeraProduct] Error processing Flipkart page:', error);
+      log.error('Error processing page:', error);
       chrome.runtime.sendMessage({
         type: 'ERROR',
         error: error.message,
@@ -195,7 +206,7 @@
     let readMoreButton = null;
     
     if (specificationsSection) {
-      console.log('[MeraProduct] Found Specifications section. Looking for Read More button nearby...');
+      log.debug('Specifications section found');
       // Look for Read More button within or near the Specifications section
       readMoreButton = Array.from(specificationsSection.querySelectorAll('button'))
                             .find(btn => btn.textContent.trim() === 'Read More');
@@ -203,15 +214,14 @@
     
     // Fallback: search the entire page for any Read More button
     if (!readMoreButton) {
-      console.log('[MeraProduct] Searching entire page for Read More button...');
+      log.debug('Searching entire page for Read More button');
       readMoreButton = Array.from(document.querySelectorAll('button'))
                             .find(btn => btn.textContent.trim() === 'Read More');
     }
     
     if (readMoreButton) {
-      console.log('[MeraProduct] Found "Read More" button:', readMoreButton.outerHTML.substring(0, 100));
-      console.log('[MeraProduct] Button parent:', readMoreButton.parentElement?.outerHTML.substring(0, 200));
-      console.log('[MeraProduct] Attempting to click with multiple methods...');
+      log.debug('Found Read More button, clicking...');
+      log.verbose('Button HTML:', readMoreButton.outerHTML.substring(0, 100));
       
       // Try multiple click methods to ensure it works
       try {
@@ -234,33 +244,34 @@
           readMoreButton.parentElement.click();
         }
         
-        console.log('[MeraProduct] Click events dispatched.');
+        log.debug('Click events dispatched');
       } catch (error) {
-        console.error('[MeraProduct] Error clicking button:', error);
+        log.error('Error clicking button:', error);
       }
       
       // Wait for content to expand and DOM to update
-      console.log('[MeraProduct] Waiting 4 seconds for content to expand...');
+      log.debug('Waiting for content to expand...');
       await new Promise(resolve => setTimeout(resolve, 4000));
       
       // Debug: Log all visible text containing manufacturing keywords
-      const allElements = Array.from(document.querySelectorAll('div, span, button, a'));
-      const relevantElements = allElements.filter(el => {
-        const text = el.textContent.toLowerCase();
-        return (text.includes('manufact') || text.includes('import') || text.includes('packaging')) &&
-               text.length < 200;
-      });
-      console.log('[MeraProduct] Found', relevantElements.length, 'elements with manufacturing/import/packaging keywords');
-      relevantElements.slice(0, 10).forEach(el => {
-        console.log('  - Element text:', el.textContent.trim().substring(0, 150));
-        console.log('    Tag:', el.tagName, 'Classes:', el.className);
-      });
+      if (log.debugMode) {
+        const allElements = Array.from(document.querySelectorAll('div, span, button, a'));
+        const relevantElements = allElements.filter(el => {
+          const text = el.textContent.toLowerCase();
+          return (text.includes('manufact') || text.includes('import') || text.includes('packaging')) &&
+                 text.length < 200;
+        });
+        log.verbose(`Found ${relevantElements.length} elements with manufacturing keywords`);
+        relevantElements.slice(0, 5).forEach(el => {
+          log.verbose('  -', el.textContent.trim().substring(0, 100));
+        });
+      }
     } else {
-      console.log('[MeraProduct] No "Read More" button found.');
+      log.debug('No Read More button found');
     }
     
-    // Step 2: Look for "Manufacturing, Packaging and Import Info" link (generic, no hardcoded classes)
-    console.log('[MeraProduct] Searching for Manufacturing info link...');
+    // Step 2: Look for "Manufacturing, Packaging and Import Info" link
+    log.debug('Searching for Manufacturing info link...');
     
     // First, try to find it within the specifications section for better accuracy
     let infoLink = null;
@@ -273,13 +284,13 @@
                                text.length < 100;
                       });
       if (infoLink) {
-        console.log('[MeraProduct] Found link within Specifications section');
+        log.debug('Found link within Specifications section');
       }
     }
     
     // Fallback: search the entire page
     if (!infoLink) {
-      console.log('[MeraProduct] Searching entire page...');
+      log.debug('Searching entire page for link...');
       infoLink = Array.from(document.querySelectorAll('div, span'))
                     .find(el => {
                       const text = el.textContent.trim();
@@ -291,8 +302,8 @@
     }
 
     if (infoLink) {
-      console.log('[MeraProduct] ✓ Found manufacturing info link:', infoLink.textContent.trim());
-      console.log('[MeraProduct] Link HTML:', infoLink.outerHTML.substring(0, 150));
+      log.debug('Manufacturing link found, clicking...');
+      log.verbose('Link:', infoLink.textContent.trim());
       
       // Trigger realistic click events
       try {
@@ -306,22 +317,21 @@
           infoLink.dispatchEvent(event);
         });
         infoLink.click();
-        console.log('[MeraProduct] Manufacturing link clicked.');
+        log.debug('Click dispatched');
       } catch (error) {
-        console.error('[MeraProduct] Error clicking manufacturing link:', error);
+        log.error('Error clicking link:', error);
       }
 
-      // Step 3: Wait for the modal to appear and get its text (generic modal detection)
-      console.log('[MeraProduct] Waiting for modal to appear...');
+      // Step 3: Wait for the modal to appear
+      log.debug('Waiting for modal...');
       const modalText = await waitForModalAndGetText(6000);
       
       if (modalText) {
-        console.log('[MeraProduct] Modal detected. Full content:');
-        console.log(modalText);
+        log.verbose('Modal detected, analyzing...');
         
         // Enhanced detection logic
         const result = analyzeManufacturingInfo(modalText);
-        console.log('[MeraProduct] Detection result:', result);
+        log.data('Detection result', result);
         
         if (result.isIndian) {
           insertIndianBadge(result);
@@ -329,17 +339,15 @@
           logAndSendMessage(result, modalText);
           return;
         } else {
-          console.log('[MeraProduct] Product is not Made in India.');
-          // Show "NOT MADE IN INDIA" badge
           insertFloatingBadge(false, result);
           hasProcessed = true;
           return;
         }
       } else {
-        console.log('[MeraProduct] Modal did not appear or could not be read.');
+        log.debug('Modal did not appear');
       }
     } else {
-      console.log('[MeraProduct] Manufacturing info link not found after expanding.');
+      log.debug('Manufacturing link not found');
     }
     
     // If we got here, the modal method didn't work - try fallback
@@ -352,25 +360,23 @@
   function fallbackDetection() {
     if (hasProcessed) return;
     
-    console.log('[MeraProduct] Using fallback detection method.');
+    log.debug('Using fallback detection method');
     const productInfo = extractProductInfo();
     
     if (!productInfo.allText.trim()) {
-      console.log('[MeraProduct] No text content found on page yet.');
+      log.debug('No text content found yet');
       return;
     }
 
-    console.log('[MeraProduct] Analyzing full page text (first 500 chars):', productInfo.allText.substring(0, 500));
+    log.verbose('Page text:', productInfo.allText.substring(0, 200));
     const result = detector.detectFromText(productInfo.allText);
-    console.log('[MeraProduct] Fallback detection result:', result);
+    log.data('Fallback result', result);
     
     if (result.isIndian && result.confidence > 0.5) {
       insertIndianBadge(result);
       hasProcessed = true;
       logAndSendMessage(result, productInfo.allText);
     } else {
-      console.log('[MeraProduct] No Indian origin detected in fallback scan - showing NOT MADE IN INDIA badge.');
-      // Show "NOT MADE IN INDIA" badge for non-Indian products
       insertFloatingBadge(false, result);
       hasProcessed = true;
     }
@@ -382,7 +388,6 @@
    * @returns {Promise<string|null>} A promise that resolves with the modal's text or null if not found.
    */
   function waitForModalAndGetText(timeout) {
-    console.log('[MeraProduct] Waiting for modal to appear (generic detection)...');
     return new Promise((resolve) => {
       const startTime = Date.now();
       const interval = setInterval(() => {
@@ -394,15 +399,15 @@
                                     el.textContent.includes('Manufacturing'));
         
         if (modal && modal.textContent.trim()) {
-          console.log('[MeraProduct] Modal found!');
+          log.debug('Modal found');
           clearInterval(interval);
           // Wait a bit for content to fully render
           setTimeout(() => {
-            console.log('[MeraProduct] Extracting modal text...');
+            log.verbose('Extracting modal text...');
             resolve(modal.textContent);
           }, 1000);
         } else if (Date.now() - startTime > timeout) {
-          console.log('[MeraProduct] Modal wait timeout reached.');
+          log.debug('Modal timeout');
           clearInterval(interval);
           resolve(null);
         }
@@ -424,26 +429,22 @@
    * @returns {Object} Detection result with isIndian and confidence
    */
   function analyzeManufacturingInfo(text) {
-    console.log('[MeraProduct] ========== ANALYZING MANUFACTURING INFO ==========');
-    console.log('[MeraProduct] Full modal text (first 500 chars):', text.substring(0, 500));
+    log.group('Analyzing Manufacturing Info');
+    log.verbose('Modal text (first 300 chars):', text.substring(0, 300));
     
     const lowerText = text.toLowerCase();
     
-    // STEP 1: Extract all relevant information with detailed logging
-    console.log('[MeraProduct] --- Step 1: Extracting Information ---');
-    
-    // Extract Country of Origin
+    // Extract all relevant information
     const countryRegex = /country\s+of\s+origin[\s:]*([^\n]+)/i;
     const countryMatch = text.match(countryRegex);
     const countryOfOrigin = countryMatch ? countryMatch[1].trim() : null;
-    console.log('[MeraProduct] Country of Origin extracted:', countryOfOrigin || 'NOT FOUND');
     
-    // Extract manufacturer address
     const manufacturerAddress = extractManufacturerAddress(text);
-    console.log('[MeraProduct] Manufacturer address extracted:', manufacturerAddress || 'NOT FOUND');
     
-    // STEP 2: Check for explicit non-Indian countries
-    console.log('[MeraProduct] --- Step 2: Checking for Non-Indian Countries ---');
+    log.debug('Extracted - Country:', countryOfOrigin || 'Not found');
+    log.debug('Extracted - Manufacturer:', manufacturerAddress ? manufacturerAddress.substring(0, 100) : 'Not found');
+    
+    // Check for explicit non-Indian countries
     const nonIndianCountries = [
       'china', 'usa', 'united states', 'korea', 'south korea', 'japan', 'taiwan',
       'vietnam', 'thailand', 'malaysia', 'singapore', 'indonesia', 'philippines',
@@ -452,7 +453,8 @@
     
     for (const country of nonIndianCountries) {
       if (countryOfOrigin && countryOfOrigin.toLowerCase().includes(country)) {
-        console.log('[MeraProduct] ❌ NOT MADE IN INDIA - Country of Origin:', countryOfOrigin);
+        log.warn(`NOT Made in India - Country: ${countryOfOrigin}`);
+        log.groupEnd();
         return {
           isIndian: false,
           confidence: 1.0,
@@ -466,7 +468,8 @@
     if (manufacturerAddress) {
       for (const country of nonIndianCountries) {
         if (manufacturerAddress.toLowerCase().includes(country)) {
-          console.log('[MeraProduct] ❌ NOT MADE IN INDIA - Manufacturer in:', country);
+          log.warn(`NOT Made in India - Manufacturer in ${country}`);
+          log.groupEnd();
           return {
             isIndian: false,
             confidence: 1.0,
@@ -477,8 +480,7 @@
       }
     }
     
-    // STEP 3: Check for explicit "Made in India" statements
-    console.log('[MeraProduct] --- Step 3: Checking for Explicit Indian Indicators ---');
+    // Check for explicit "Made in India" statements
     const explicitIndicators = [
       'made in india',
       'manufactured in india',
@@ -488,7 +490,8 @@
     
     for (const indicator of explicitIndicators) {
       if (lowerText.includes(indicator)) {
-        console.log('[MeraProduct] ✓ Explicit indicator found:', indicator);
+        log.success(`Made in India - Explicit: "${indicator}" (100%)`);
+        log.groupEnd();
         return {
           isIndian: true,
           confidence: 1.0,
@@ -498,21 +501,20 @@
       }
     }
     
-    // STEP 4: Check for "Country of Origin: India"
-    console.log('[MeraProduct] --- Step 4: Checking Country of Origin ---');
+    // Check for "Country of Origin: India"
     const countryOfOriginRegex = /country\s+of\s+origin[\s:]*india/i;
     const hasCountryOfOrigin = countryOfOriginRegex.test(lowerText);
-    console.log('[MeraProduct] Country of Origin: India?', hasCountryOfOrigin);
     
-    // STEP 5: Check if manufacturer address is Indian
-    console.log('[MeraProduct] --- Step 5: Checking Manufacturer Address ---');
+    // Check if manufacturer address is Indian
     const hasManufacturerIndia = manufacturerAddress && isIndianAddress(manufacturerAddress);
-    console.log('[MeraProduct] Manufacturer is Indian?', hasManufacturerIndia);
     
-    // STEP 6: Combined scoring logic
-    console.log('[MeraProduct] --- Step 6: Calculating Confidence ---');
+    log.debug('Country of Origin: India?', hasCountryOfOrigin);
+    log.debug('Manufacturer is Indian?', hasManufacturerIndia);
+    
+    // Combined scoring logic
     if (hasCountryOfOrigin && hasManufacturerIndia) {
-      console.log('[MeraProduct] ✓ Country of Origin: India + Manufacturer in India (100% confidence)');
+      log.success('Made in India - Country + Manufacturer (100%)');
+      log.groupEnd();
       return {
         isIndian: true,
         confidence: 1.0,
@@ -522,7 +524,8 @@
     }
     
     if (hasCountryOfOrigin) {
-      console.log('[MeraProduct] ✓ Country of Origin: India (70% confidence)');
+      log.success('Made in India - Country only (70%)');
+      log.groupEnd();
       return {
         isIndian: true,
         confidence: 0.70,
@@ -532,7 +535,8 @@
     }
     
     if (hasManufacturerIndia && manufacturerAddress) {
-      console.log('[MeraProduct] ✓ Manufacturer address is Indian (50% confidence)');
+      log.success('Made in India - Manufacturer only (50%)');
+      log.groupEnd();
       return {
         isIndian: true,
         confidence: 0.50,
@@ -541,14 +545,14 @@
       };
     }
     
-    // STEP 7: Generic "Origin: India" fallback
-    console.log('[MeraProduct] --- Step 7: Generic Origin Check ---');
+    // Generic "Origin: India" fallback
     const originRegex = /(?:origin)[\s:]+([^\n,]+)/i;
     const match = text.match(originRegex);
     if (match) {
-      console.log('[MeraProduct] Origin field found:', match[1]);
+      log.debug('Origin field found:', match[1]);
       if (match[1].toLowerCase().includes('india')) {
-        console.log('[MeraProduct] ✓ Origin: India (70% confidence)');
+        log.success('Made in India - Origin field (70%)');
+        log.groupEnd();
         return {
           isIndian: true,
           confidence: 0.70,
@@ -558,14 +562,14 @@
       }
     }
     
-    // STEP 8: Fallback to the generic detector
-    console.log('[MeraProduct] --- Step 8: Using Fallback Generic Detector ---');
+    // Fallback to the generic detector
+    log.debug('Using fallback generic detector');
     const result = detector.detectFromText(text);
-    console.log('[MeraProduct] Generic detector result:', result);
     
     // If no Indian indicators found, explicitly mark as NOT Indian
     if (!result.isIndian) {
-      console.log('[MeraProduct] ❌ NO INDIAN INDICATORS FOUND - Product is NOT Made in India');
+      log.warn('NOT Made in India - No indicators found');
+      log.groupEnd();
       return {
         isIndian: false,
         confidence: 0.8,
@@ -574,7 +578,7 @@
       };
     }
     
-    console.log('[MeraProduct] ========== ANALYSIS COMPLETE ==========');
+    log.groupEnd();
     return result;
   }
 
@@ -596,7 +600,7 @@
     if (pinCodeMatch) {
       const pinCode = parseInt(pinCodeMatch[0]);
       if (pinCode >= 100000 && pinCode <= 855999) {
-        console.log('[MeraProduct] ✓ Indian PIN code detected:', pinCodeMatch[0]);
+        log.debug('Indian PIN code detected:', pinCodeMatch[0]);
         return true;
       }
     }
@@ -610,12 +614,12 @@
     
     for (const area of indianIndustrialAreas) {
       if (lowerAddress.includes(area)) {
-        console.log('[MeraProduct] ✓ Indian industrial area detected:', area);
+        log.debug('Indian industrial area:', area);
         return true;
       }
     }
     
-    // Check 4: Major Indian cities (partial list of common manufacturing hubs)
+    // Check 4: Major Indian cities
     const indianCities = [
       'mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata',
       'pune', 'ahmedabad', 'surat', 'jaipur', 'lucknow', 'kanpur', 'nagpur', 'indore',
@@ -628,12 +632,12 @@
     
     for (const city of indianCities) {
       if (lowerAddress.includes(city)) {
-        console.log('[MeraProduct] ✓ Indian city detected:', city);
+        log.debug('Indian city detected:', city);
         return true;
       }
     }
     
-    // Check 5: Indian states (abbreviated or full names)
+    // Check 5: Indian states
     const indianStates = [
       'maharashtra', 'tamil nadu', 'karnataka', 'kerala', 'gujarat', 'rajasthan',
       'west bengal', 'madhya pradesh', 'uttar pradesh', 'bihar', 'andhra pradesh',
@@ -643,7 +647,7 @@
     
     for (const state of indianStates) {
       if (lowerAddress.includes(state)) {
-        console.log('[MeraProduct] ✓ Indian state detected:', state);
+        log.debug('Indian state detected:', state);
         return true;
       }
     }
@@ -740,12 +744,11 @@
    * Initialize the content script
    */
   function initialize() {
-    console.log('[MeraProduct] Flipkart content script loaded');
-    console.log('[MeraProduct] Waiting 10 seconds for page to fully load...');
+    log.debug('Waiting for page to load...');
 
-    // Wait 10 seconds before starting the detection process
+    // Wait 2 seconds before starting the detection process
     setTimeout(() => {
-      console.log('[MeraProduct] Starting detection process after 10 second delay.');
+      log.debug('Starting detection process');
       
       // Process immediately if page is already loaded
       if (document.readyState === 'loading') {
@@ -756,7 +759,7 @@
 
       // Set up observer for dynamic content
       setupObserver();
-    }, 2000); // 10 second delay
+    }, 10000);
 
     // Handle navigation in single-page apps
     let currentUrl = window.location.href;
@@ -764,8 +767,8 @@
       if (window.location.href !== currentUrl) {
         currentUrl = window.location.href;
         hasProcessed = false;
-        console.log('[MeraProduct] URL changed. Waiting 10 seconds before processing...');
-        setTimeout(processPage, 10000);
+        log.info('URL changed, reprocessing...');
+        setTimeout(processPage, 5000);
       }
     }, 1000);
   }
