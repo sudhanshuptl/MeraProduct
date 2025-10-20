@@ -6,12 +6,37 @@
 (function() {
   'use strict';
 
+  const log = new Logger('Amazon');
   const detector = new OriginDetector();
+  const storage = new ProductStorage();
   let hasProcessed = false;
+
+  // Show simple info message
+  log.info('MeraProduct loaded' + (log.debugMode ? ' (Debug Mode ON)' : ''));
+  
+  // If not in debug mode, show how to enable it
+  if (!log.debugMode) {
+    console.log('%c💡 Tip: Enable debug mode in extension settings (click extension icon → ⚙️ → Debug Mode)', 
+                'color: #888; font-style: italic;');
+  }
+
+  // Listen for debug mode changes from popup
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'updateDebugMode') {
+      if (message.debugMode) {
+        Logger.enableDebug();
+        console.log('%c✅ Debug Mode ENABLED from extension settings', 'color: #22c55e; font-weight: bold;');
+      } else {
+        Logger.disableDebug();
+        console.log('%c⚠️ Debug Mode DISABLED from extension settings', 'color: #f59e0b; font-weight: bold;');
+      }
+    }
+  });
 
   // Amazon-specific selectors
   const AMAZON_SELECTORS = {
     productTitle: '#productTitle, .product-title',
+    productImage: '#landingImage, #imgTagWrapperId img, .a-dynamic-image',
     featureBullets: '#feature-bullets ul, .a-unordered-list.a-vertical.a-spacing-mini',
     productDetails: '#detailBullets_feature_div, #productDetails_detailBullets_sections1',
     additionalInfo: '#productDetails_techSpec_section_1, .a-section.a-spacing-small',
@@ -25,6 +50,7 @@
   function extractProductInfo() {
     const productInfo = {
       title: '',
+      image: '',
       features: '',
       details: '',
       additionalInfo: '',
@@ -35,6 +61,12 @@
     const titleElement = document.querySelector(AMAZON_SELECTORS.productTitle);
     if (titleElement) {
       productInfo.title = titleElement.textContent.trim();
+    }
+
+    // Extract product image
+    const imageElement = document.querySelector(AMAZON_SELECTORS.productImage);
+    if (imageElement) {
+      productInfo.image = imageElement.src || imageElement.getAttribute('data-old-hires') || '';
     }
 
     // Extract feature bullets
@@ -84,23 +116,42 @@
   /**
    * Insert floating badge into the page
    */
-  function insertFloatingBadge(isMadeInIndia, result = null) {
+  async function insertFloatingBadge(isMadeInIndia, result = null, productInfo = null) {
     // Remove any existing badge first
     const existingBadge = document.querySelector('.meraproduct-floating-badge');
     if (existingBadge) {
       existingBadge.remove();
     }
     
-    const confidence = result ? result.confidence : 0;
-    const badge = detector.createFloatingBadge(isMadeInIndia, confidence);
+    const confidence = result ? Math.round(result.confidence * 100) : 0;
+    const badge = detector.createFloatingBadge(isMadeInIndia, confidence / 100);
     
     // Insert at the end of body for fixed positioning
     document.body.appendChild(badge);
     
+    // Save product to history
+    if (productInfo && productInfo.title) {
+      try {
+        await storage.saveProduct({
+          name: productInfo.title,
+          url: window.location.href,
+          site: 'amazon',
+          isMadeInIndia: isMadeInIndia,
+          confidence: confidence,
+          indicator: isMadeInIndia ? '🇮🇳 MADE IN INDIA' : '🚫 NOT MADE IN INDIA',
+          manufacturer: result ? detector.extractManufacturer(productInfo.allText) : '',
+          image: productInfo.image
+        });
+        console.log('[MeraProduct] Product saved to history');
+      } catch (error) {
+        console.error('[MeraProduct] Error saving product:', error);
+      }
+    }
+    
     // Show notification
     if (isMadeInIndia) {
       detector.showNotification(
-        `🇮🇳 Made in India product detected! Confidence: ${Math.round(confidence * 100)}%`,
+        `🇮🇳 Made in India product detected! Confidence: ${confidence}%`,
         'success'
       );
     } else {
@@ -114,14 +165,14 @@
   /**
    * Insert Indian badge into the page (legacy wrapper)
    */
-  function insertIndianBadge(result) {
-    insertFloatingBadge(true, result);
+  async function insertIndianBadge(result, productInfo) {
+    await insertFloatingBadge(true, result, productInfo);
   }
 
   /**
    * Process the Amazon product page
    */
-  function processPage() {
+  async function processPage() {
     if (hasProcessed) return;
 
     try {
@@ -136,7 +187,7 @@
       const result = detector.detectFromText(productInfo.allText);
       
       if (result.isIndian && result.confidence > 0.5) {
-        insertIndianBadge(result);
+        await insertIndianBadge(result, productInfo);
         hasProcessed = true;
 
         // Extract manufacturer if possible
@@ -158,7 +209,7 @@
       } else {
         // Show "NOT MADE IN INDIA" badge for non-Indian products
         console.log('[MeraProduct] Product is not Made in India - showing red badge.');
-        insertFloatingBadge(false, result);
+        await insertFloatingBadge(false, result, productInfo);
         hasProcessed = true;
       }
 

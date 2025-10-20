@@ -11,6 +11,7 @@
 
   const log = new Logger('Flipkart');
   const detector = new OriginDetector();
+  const storage = new ProductStorage();
   let hasProcessed = false;
 
   // Show simple info message
@@ -18,13 +19,27 @@
   
   // If not in debug mode, show how to enable it
   if (!log.debugMode) {
-    console.log('%c💡 Tip: Enable debug mode for detailed logs → Logger.enableDebug()', 
+    console.log('%c💡 Tip: Enable debug mode in extension settings (click extension icon → ⚙️ → Debug Mode)', 
                 'color: #888; font-style: italic;');
   }
 
+  // Listen for debug mode changes from popup
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'updateDebugMode') {
+      if (message.debugMode) {
+        Logger.enableDebug();
+        console.log('%c✅ Debug Mode ENABLED from extension settings', 'color: #22c55e; font-weight: bold;');
+      } else {
+        Logger.disableDebug();
+        console.log('%c⚠️ Debug Mode DISABLED from extension settings', 'color: #f59e0b; font-weight: bold;');
+      }
+    }
+  });
+
   // Flipkart-specific selectors
   const FLIPKART_SELECTORS = {
-    productTitle: '.B_NuCI, ._35KyD6',
+    productTitle: 'h1 span, .VU-ZEz, .B_NuCI, ._35KyD6, h1.yhB1nd',
+    productImage: '._396cs4 img, ._2r_T1I img, .CXW8mj img',
     specifications: '._1mKl_E, ._3k-BhJ',
     highlights: '._2418kt, ._1AN87F',
     productDetails: '._1mKl_E table, ._3k-BhJ table',
@@ -41,13 +56,33 @@
       highlights: '',
       specifications: '',
       details: '',
-      allText: ''
+      allText: '',
+      image: ''
     };
 
-    // Extract product title
-    const titleElement = document.querySelector(FLIPKART_SELECTORS.productTitle);
+    // Extract product title - try multiple methods
+    let titleElement = document.querySelector(FLIPKART_SELECTORS.productTitle);
+    
+    // Fallback: try to find h1 with span inside
+    if (!titleElement || !titleElement.textContent.trim()) {
+      titleElement = document.querySelector('h1 span') || 
+                     document.querySelector('h1') ||
+                     document.evaluate('/html/body/div[1]/div/div[3]/div[1]/div[2]/div[2]/div/div[1]/h1/span', 
+                                       document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    }
+    
     if (titleElement) {
       productInfo.title = titleElement.textContent.trim();
+      log.verbose('Product title found:', productInfo.title.substring(0, 100));
+    } else {
+      log.warn('Product title not found with any selector');
+    }
+
+    // Extract product image
+    const imageElement = document.querySelector(FLIPKART_SELECTORS.productImage);
+    if (imageElement) {
+      productInfo.image = imageElement.src || imageElement.getAttribute('data-src') || '';
+      log.verbose('Product image found:', productInfo.image ? 'Yes' : 'No');
     }
 
     // Extract highlights
@@ -97,7 +132,7 @@
   /**
    * Insert floating badge into the page
    */
-  function insertFloatingBadge(isMadeInIndia, result = null) {
+  async function insertFloatingBadge(isMadeInIndia, result = null) {
     // Remove any existing badge first
     const existingBadge = document.querySelector('.meraproduct-floating-badge');
     if (existingBadge) {
@@ -109,6 +144,39 @@
     
     // Insert at the end of body for fixed positioning
     document.body.appendChild(badge);
+    
+    // Extract product info and save to history
+    const productInfo = extractProductInfo();
+    
+    log.debug('Product info extracted:', {
+      title: productInfo.title,
+      hasImage: !!productInfo.image,
+      textLength: productInfo.allText.length
+    });
+    
+    // Only save if we have a product title
+    if (productInfo.title) {
+      try {
+        const productData = {
+          name: productInfo.title,
+          url: window.location.href,
+          site: 'flipkart',
+          isMadeInIndia: isMadeInIndia,
+          confidence: Math.round(confidence * 100), // Convert to percentage (0-100)
+          indicator: (isMadeInIndia ? '🇮🇳 MADE IN INDIA' : '🚫 NOT MADE IN INDIA'),
+          manufacturer: result?.manufacturer || '',
+          image: productInfo.image || ''
+        };
+        
+        log.debug('Saving product to history:', productData);
+        await storage.saveProduct(productData);
+        log.success('Product saved to history successfully!');
+      } catch (error) {
+        log.error('Failed to save product:', error);
+      }
+    } else {
+      log.warn('Cannot save product - no title found');
+    }
     
     // Show notification
     if (isMadeInIndia) {

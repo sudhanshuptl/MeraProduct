@@ -1,69 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MeraProduct</title>
-    <link rel="stylesheet" href="popup.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeraProduct - History</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="logo">
-                <span class="flag">🇮🇳</span>
-                <h1>MeraProduct</h1>
-            </div>
-            <div class="status-indicator" id="statusIndicator">
-                <span class="status-dot"></span>
-                <span class="status-text">Active</span>
-            </div>
-        </header>
+  <div class="container">
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <span class="logo-icon">🇮🇳</span>
+          <h1 class="logo-text">MeraProduct</h1>
+        </div>
+        <button id="settingsBtn" class="icon-btn" title="Settings">
+          <span>⚙️</span>
+        </button>
+      </div>
+      <p class="tagline">Track your Made in India products</p>
+    </header>
 
-        <main class="main">
-            <div class="stats-section">
-                <h2>Detection Stats</h2>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalDetections">0</span>
-                        <span class="stat-label">Products Found</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="sitesSupported">2</span>
-                        <span class="stat-label">Sites Supported</span>
-                    </div>
-                </div>
-            </div>
+    <section class="stats-panel">
+      <div class="stat-card">
+        <div class="stat-value" id="totalProducts">0</div>
+        <div class="stat-label">Products Checked</div>
+      </div>
+      <div class="stat-card stat-card-success">
+        <div class="stat-value" id="madeInIndiaCount">0</div>
+        <div class="stat-label">Made in India</div>
+      </div>
+      <div class="stat-card stat-card-info">
+        <div class="stat-value" id="successRate">0%</div>
+        <div class="stat-label">Success Rate</div>
+      </div>
+    </section>
 
-            <div class="recent-section">
-                <h3>Recent Detections</h3>
-                <div class="recent-list" id="recentList">
-                    <div class="empty-state">
-                        <span>🔍</span>
-                        <p>No detections yet. Visit Amazon or Flipkart to start!</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="actions-section">
-                <button class="btn btn-primary" id="toggleBtn">
-                    <span id="toggleText">Disable Extension</span>
-                </button>
-                <button class="btn btn-secondary" id="optionsBtn">
-                    Settings
-                </button>
-            </div>
-        </main>
-
-        <footer class="footer">
-            <div class="footer-links">
-                <a href="#" id="aboutLink">About</a>
-                <a href="#" id="supportLink">Support</a>
-                <a href="https://github.com/sudhanshuptl/meraproduct" target="_blank">GitHub</a>
-            </div>
-            <p class="tagline">Made with ❤️ for Atmanirbhar Bharat</p>
-        </footer>
+    <div class="actions-bar">
+      <button id="clearHistoryBtn" class="btn btn-secondary">
+        <span>🗑️</span>
+        Clear History
+      </button>
+      <button id="refreshBtn" class="btn btn-primary">
+        <span>🔄</span>
+        Refresh
+      </button>
     </div>
 
-    <script src="popup.js"></script>
+    <section class="history-section">
+      <h2 class="section-title">Recent Products (Last 30)</h2>
+      <div id="historyList" class="history-list"></div>
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <span class="empty-icon">📦</span>
+        <p class="empty-text">No products checked yet</p>
+        <p class="empty-subtext">Visit Flipkart or Amazon to start tracking!</p>
+      </div>
+    </section>
+
+    <div id="settingsPanel" class="settings-panel" style="display: none;">
+      <div class="settings-header">
+        <h3>Settings</h3>
+        <button id="closeSettingsBtn" class="icon-btn">✕</button>
+      </div>
+      <div class="settings-content">
+        <div class="setting-item">
+          <label class="setting-label">
+            <span>Debug Mode</span>
+            <input type="checkbox" id="debugModeToggle" class="toggle">
+          </label>
+          <p class="setting-description">Enable detailed console logging</p>
+        </div>
+        <div class="setting-item">
+          <label class="setting-label">
+            <span>Show Confidence Score</span>
+            <input type="checkbox" id="showConfidenceToggle" class="toggle" checked>
+          </label>
+          <p class="setting-description">Display detection confidence percentage</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
 </body>
 </html>
