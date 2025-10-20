@@ -29,13 +29,19 @@ chrome.runtime.onInstalled.addListener((details) => {
       detectionLog: []
     });
     
-    // Show welcome notification
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'assets/icons/icon128.png',
-      title: 'MeraProduct Extension Installed!',
-      message: '🇮🇳 Start browsing e-commerce sites to discover Made in India products!'
-    });
+    // Show welcome notification (with error handling for icon loading issues)
+    try {
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
+        title: 'MeraProduct Extension Installed!',
+        message: '🇮🇳 Start browsing e-commerce sites to discover Made in India products!'
+      }).catch(err => {
+        console.warn('[MeraProduct] Could not show welcome notification:', err);
+      });
+    } catch (error) {
+      console.warn('[MeraProduct] Notification API error:', error);
+    }
   }
 });
 
@@ -108,9 +114,11 @@ function handleIndianProductDetected(message, sender) {
     if (data.showNotifications !== false) {
       chrome.notifications.create({
         type: 'basic',
-        iconUrl: 'assets/icons/icon48.png',
+        iconUrl: chrome.runtime.getURL('assets/icons/icon48.png'),
         title: 'Made in India Product Found!',
         message: `🇮🇳 ${message.title.substring(0, 50)}${message.title.length > 50 ? '...' : ''}`
+      }).catch(err => {
+        console.warn('[MeraProduct] Notification error:', err);
       });
     }
   });
@@ -136,14 +144,16 @@ function handleShowNotification(message) {
   chrome.storage.local.get(['showNotifications'], (data) => {
     if (data.showNotifications !== false) {
       const iconUrl = message.notificationType === 'success' ? 
-        'assets/icons/icon48.png' : 
-        'assets/icons/icon32.png';
+        chrome.runtime.getURL('assets/icons/icon48.png') : 
+        chrome.runtime.getURL('assets/icons/icon32.png');
         
       chrome.notifications.create({
         type: 'basic',
         iconUrl: iconUrl,
         title: 'MeraProduct',
         message: message.message
+      }).catch(err => {
+        console.warn('[MeraProduct] Notification error:', err);
       });
     }
   });
@@ -280,12 +290,23 @@ function toggleExtension(enabled) {
   extensionState.isEnabled = enabled;
   chrome.storage.local.set({ isEnabled: enabled });
   
-  // Update icon based on state
-  const iconPath = enabled ? 
-    'assets/icons/icon32.png' : 
-    'assets/icons/icon32-disabled.png';
-    
-  chrome.action.setIcon({ path: iconPath });
+  // Update icon based on state (only if we have disabled icons)
+  // For now, we'll skip changing the icon since we don't have disabled versions
+  // TODO: Create disabled icon variants
+  
+  // If we want to change the icon in the future:
+  // const iconPaths = enabled ? {
+  //   "16": "assets/icons/icon16.png",
+  //   "32": "assets/icons/icon32.png",
+  //   "48": "assets/icons/icon48.png",
+  //   "128": "assets/icons/icon128.png"
+  // } : {
+  //   "16": "assets/icons/icon16-disabled.png",
+  //   "32": "assets/icons/icon32-disabled.png",
+  //   "48": "assets/icons/icon48-disabled.png",
+  //   "128": "assets/icons/icon128-disabled.png"
+  // };
+  // chrome.action.setIcon({ path: iconPaths });
 }
 
 /**

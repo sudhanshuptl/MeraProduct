@@ -105,94 +105,49 @@
 
   /**
    * Process the Flipkart product page using a more robust, multi-step approach.
+   * Uses MutationObserver to handle dynamically loaded content.
    */
   async function processPage() {
     if (hasProcessed) return;
     console.log('[MeraProduct] Starting page process for Flipkart...');
 
     try {
-      // Step 1: Look for "Read More" button using the exact class selector
-      const readMoreButton = document.querySelector('button.QqFHMw._4FgsLt, button._4FgsLt, button.QqFHMw') ||
-                             Array.from(document.querySelectorAll('button'))
-                                  .find(btn => btn.textContent.trim() === 'Read More');
+      // First, check if the Specifications section is already loaded (generic check)
+      let readMoreButton = Array.from(document.querySelectorAll('button'))
+                                .find(btn => btn.textContent.trim() === 'Read More');
       
       if (readMoreButton) {
-        console.log('[MeraProduct] Found "Read More" button. Clicking it.');
-        readMoreButton.click();
-        
-        // Wait for content to expand and DOM to update
-        await new Promise(resolve => setTimeout(resolve, 2500));
-        
-        // Debug: Log all visible text containing "Manufact" or "Import" or "Packaging"
-        const allElements = Array.from(document.querySelectorAll('div, span, button, a'));
-        const relevantElements = allElements.filter(el => {
-          const text = el.textContent.toLowerCase();
-          return (text.includes('manufact') || text.includes('import') || text.includes('packaging')) &&
-                 text.length < 200; // Avoid parent containers with too much text
-        });
-        console.log('[MeraProduct] Found', relevantElements.length, 'elements with manufacturing/import/packaging keywords');
-        relevantElements.slice(0, 10).forEach(el => {
-          console.log('  - Element text:', el.textContent.trim().substring(0, 150));
-          console.log('    Tag:', el.tagName, 'Classes:', el.className);
-        });
+        console.log('[MeraProduct] Specifications section already loaded. Processing...');
+        await performManufacturingInfoClick();
       } else {
-        console.log('[MeraProduct] No "Read More" button found.');
-      }
-      
-      // Step 2: Now look for "Manufacturing, Packaging and Import Info" link using exact class or text
-      const infoLink = document.querySelector('div.rJ5jQ6') ||
-                       Array.from(document.querySelectorAll('div'))
-                            .find(el => {
-                              const text = el.textContent.trim();
-                              return text === 'Manufacturing, Packaging and Import Info';
-                            });
-
-      if (infoLink) {
-        console.log('[MeraProduct] Found manufacturing info link:', infoLink.textContent.trim());
-        infoLink.click();
-
-        // Step 3: Wait for the modal to appear and get its text
-        const modalText = await waitForModalAndGetText('._2-i-c4, .modal, [role="dialog"], ._3gRBUu, div.xe2C75, span.Ez0xjR', 6000);
+        console.log('[MeraProduct] Specifications section not yet loaded. Setting up MutationObserver...');
         
-        if (modalText) {
-          console.log('[MeraProduct] Modal detected. Content preview:', modalText.substring(0, 300));
-          const result = detector.detectFromText(modalText);
-          console.log('[MeraProduct] Detection result:', result);
+        // Set up observer to watch for the Specifications section to load
+        const observer = new MutationObserver(async (mutations, obs) => {
+          // Check if Read More button has appeared (generic check)
+          const readMore = Array.from(document.querySelectorAll('button'))
+                               .find(btn => btn.textContent.trim() === 'Read More');
           
-          if (result.isIndian && result.confidence > 0.6) {
-            insertIndianBadge(result);
-            hasProcessed = true;
-            logAndSendMessage(result, modalText);
-            return; // Stop processing
-          } else {
-            console.log('[MeraProduct] Modal content did not indicate Indian origin or low confidence.');
+          if (readMore && !hasProcessed) {
+            console.log('[MeraProduct] Specifications section loaded via MutationObserver!');
+            obs.disconnect(); // Stop observing once we found it
+            await performManufacturingInfoClick();
           }
-        } else {
-          console.log('[MeraProduct] Modal did not appear or could not be read.');
-        }
-      } else {
-        console.log('[MeraProduct] Manufacturing info link not found after expanding.');
-      }
-
-      // Step 5: If the modal method fails or doesn't find anything, fall back to the old method.
-      console.log('[MeraProduct] Modal method failed or no result. Falling back to general page scan.');
-      const productInfo = extractProductInfo();
-      
-      if (!productInfo.allText.trim()) {
-        console.log('[MeraProduct] No text content found on page yet.');
-        return;
-      }
-
-      console.log('[MeraProduct] Analyzing full page text (first 500 chars):', productInfo.allText.substring(0, 500));
-      const result = detector.detectFromText(productInfo.allText);
-      console.log('[MeraProduct] Fallback detection result:', result);
-      
-      if (result.isIndian && result.confidence > 0.5) {
-        insertIndianBadge(result);
-        hasProcessed = true;
-        logAndSendMessage(result, productInfo.allText);
-      } else {
-        console.log('[MeraProduct] No Indian origin detected in fallback scan.');
+        });
+        
+        // Start observing the document for changes
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+        
+        // Set a timeout to disconnect the observer after 10 seconds
+        setTimeout(() => {
+          observer.disconnect();
+          console.log('[MeraProduct] MutationObserver timeout reached.');
+          // Try fallback method
+          fallbackDetection();
+        }, 10000);
       }
 
     } catch (error) {
@@ -207,32 +162,313 @@
   }
 
   /**
-   * Waits for a modal to appear and extracts its text content.
-   * @param {string} selector - The CSS selector for the modal container.
+   * Perform the click sequence to open manufacturing info modal
+   */
+  async function performManufacturingInfoClick() {
+    if (hasProcessed) return;
+    
+    // Step 1: Find "Read More" button in a generic way (without relying on specific classes)
+    // First, find the Specifications section
+    const specificationsSection = Array.from(document.querySelectorAll('div'))
+                                        .find(el => {
+                                          const text = el.textContent;
+                                          return text.includes('Specifications') && el.querySelector('button');
+                                        });
+    
+    let readMoreButton = null;
+    
+    if (specificationsSection) {
+      console.log('[MeraProduct] Found Specifications section. Looking for Read More button nearby...');
+      // Look for Read More button within or near the Specifications section
+      readMoreButton = Array.from(specificationsSection.querySelectorAll('button'))
+                            .find(btn => btn.textContent.trim() === 'Read More');
+    }
+    
+    // Fallback: search the entire page for any Read More button
+    if (!readMoreButton) {
+      console.log('[MeraProduct] Searching entire page for Read More button...');
+      readMoreButton = Array.from(document.querySelectorAll('button'))
+                            .find(btn => btn.textContent.trim() === 'Read More');
+    }
+    
+    if (readMoreButton) {
+      console.log('[MeraProduct] Found "Read More" button:', readMoreButton.outerHTML.substring(0, 100));
+      console.log('[MeraProduct] Button parent:', readMoreButton.parentElement?.outerHTML.substring(0, 200));
+      console.log('[MeraProduct] Attempting to click with multiple methods...');
+      
+      // Try multiple click methods to ensure it works
+      try {
+        // Method 1: MouseEvent with all mouse event types
+        ['mousedown', 'mouseup', 'click'].forEach(eventType => {
+          const event = new MouseEvent(eventType, {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            buttons: 1
+          });
+          readMoreButton.dispatchEvent(event);
+        });
+        
+        // Method 2: Regular click
+        readMoreButton.click();
+        
+        // Method 3: Try clicking the parent if the button itself doesn't work
+        if (readMoreButton.parentElement) {
+          readMoreButton.parentElement.click();
+        }
+        
+        console.log('[MeraProduct] Click events dispatched.');
+      } catch (error) {
+        console.error('[MeraProduct] Error clicking button:', error);
+      }
+      
+      // Wait for content to expand and DOM to update
+      console.log('[MeraProduct] Waiting 4 seconds for content to expand...');
+      await new Promise(resolve => setTimeout(resolve, 4000));
+      
+      // Debug: Log all visible text containing manufacturing keywords
+      const allElements = Array.from(document.querySelectorAll('div, span, button, a'));
+      const relevantElements = allElements.filter(el => {
+        const text = el.textContent.toLowerCase();
+        return (text.includes('manufact') || text.includes('import') || text.includes('packaging')) &&
+               text.length < 200;
+      });
+      console.log('[MeraProduct] Found', relevantElements.length, 'elements with manufacturing/import/packaging keywords');
+      relevantElements.slice(0, 10).forEach(el => {
+        console.log('  - Element text:', el.textContent.trim().substring(0, 150));
+        console.log('    Tag:', el.tagName, 'Classes:', el.className);
+      });
+    } else {
+      console.log('[MeraProduct] No "Read More" button found.');
+    }
+    
+    // Step 2: Look for "Manufacturing, Packaging and Import Info" link (generic, no hardcoded classes)
+    console.log('[MeraProduct] Searching for Manufacturing info link...');
+    
+    // First, try to find it within the specifications section for better accuracy
+    let infoLink = null;
+    if (specificationsSection) {
+      infoLink = Array.from(specificationsSection.querySelectorAll('div, span'))
+                      .find(el => {
+                        const text = el.textContent.trim();
+                        return (text === 'Manufacturing, Packaging and Import Info' ||
+                               text === 'Manufacturing, Packaging & Import Info') &&
+                               text.length < 100;
+                      });
+      if (infoLink) {
+        console.log('[MeraProduct] Found link within Specifications section');
+      }
+    }
+    
+    // Fallback: search the entire page
+    if (!infoLink) {
+      console.log('[MeraProduct] Searching entire page...');
+      infoLink = Array.from(document.querySelectorAll('div, span'))
+                    .find(el => {
+                      const text = el.textContent.trim();
+                      // Must be EXACT match - not a parent container with lots of text
+                      return (text === 'Manufacturing, Packaging and Import Info' ||
+                             text === 'Manufacturing, Packaging & Import Info') &&
+                             text.length < 100; // Ensure it's not a parent container
+                    });
+    }
+
+    if (infoLink) {
+      console.log('[MeraProduct] ✓ Found manufacturing info link:', infoLink.textContent.trim());
+      console.log('[MeraProduct] Link HTML:', infoLink.outerHTML.substring(0, 150));
+      
+      // Trigger realistic click events
+      try {
+        ['mousedown', 'mouseup', 'click'].forEach(eventType => {
+          const event = new MouseEvent(eventType, {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            buttons: 1
+          });
+          infoLink.dispatchEvent(event);
+        });
+        infoLink.click();
+        console.log('[MeraProduct] Manufacturing link clicked.');
+      } catch (error) {
+        console.error('[MeraProduct] Error clicking manufacturing link:', error);
+      }
+
+      // Step 3: Wait for the modal to appear and get its text (generic modal detection)
+      console.log('[MeraProduct] Waiting for modal to appear...');
+      const modalText = await waitForModalAndGetText(6000);
+      
+      if (modalText) {
+        console.log('[MeraProduct] Modal detected. Full content:');
+        console.log(modalText);
+        
+        // Enhanced detection logic
+        const result = analyzeManufacturingInfo(modalText);
+        console.log('[MeraProduct] Detection result:', result);
+        
+        if (result.isIndian) {
+          insertIndianBadge(result);
+          hasProcessed = true;
+          logAndSendMessage(result, modalText);
+          return;
+        } else {
+          console.log('[MeraProduct] Product is not Made in India or could not determine origin.');
+        }
+      } else {
+        console.log('[MeraProduct] Modal did not appear or could not be read.');
+      }
+    } else {
+      console.log('[MeraProduct] Manufacturing info link not found after expanding.');
+    }
+    
+    // If we got here, the modal method didn't work - try fallback
+    fallbackDetection();
+  }
+
+  /**
+   * Fallback detection method that scans all visible page text
+   */
+  function fallbackDetection() {
+    if (hasProcessed) return;
+    
+    console.log('[MeraProduct] Using fallback detection method.');
+    const productInfo = extractProductInfo();
+    
+    if (!productInfo.allText.trim()) {
+      console.log('[MeraProduct] No text content found on page yet.');
+      return;
+    }
+
+    console.log('[MeraProduct] Analyzing full page text (first 500 chars):', productInfo.allText.substring(0, 500));
+    const result = detector.detectFromText(productInfo.allText);
+    console.log('[MeraProduct] Fallback detection result:', result);
+    
+    if (result.isIndian && result.confidence > 0.5) {
+      insertIndianBadge(result);
+      hasProcessed = true;
+      logAndSendMessage(result, productInfo.allText);
+    } else {
+      console.log('[MeraProduct] No Indian origin detected in fallback scan.');
+    }
+  }
+
+  /**
+   * Waits for a modal to appear and extracts its text content (generic, no hardcoded selectors).
    * @param {number} timeout - How long to wait in milliseconds.
    * @returns {Promise<string|null>} A promise that resolves with the modal's text or null if not found.
    */
-  function waitForModalAndGetText(selector, timeout) {
-    console.log('[MeraProduct] Waiting for modal with selector:', selector);
+  function waitForModalAndGetText(timeout) {
+    console.log('[MeraProduct] Waiting for modal to appear (generic detection)...');
     return new Promise((resolve) => {
       const startTime = Date.now();
       const interval = setInterval(() => {
-        const modal = document.querySelector(selector);
+        // Look for modal using multiple generic strategies
+        let modal = document.querySelector('[role="dialog"]') || // Standard modal role
+                    document.querySelector('.modal') ||          // Common class name
+                    Array.from(document.querySelectorAll('div')) // Find div with "Country of Origin" text
+                         .find(el => el.textContent.includes('Country of Origin') && 
+                                    el.textContent.includes('Manufacturing'));
+        
         if (modal && modal.textContent.trim()) {
           console.log('[MeraProduct] Modal found!');
           clearInterval(interval);
-          // Wait a bit for content to render inside the modal
+          // Wait a bit for content to fully render
           setTimeout(() => {
             console.log('[MeraProduct] Extracting modal text...');
             resolve(modal.textContent);
-          }, 800);
+          }, 1000);
         } else if (Date.now() - startTime > timeout) {
           console.log('[MeraProduct] Modal wait timeout reached.');
           clearInterval(interval);
-          resolve(null); // Timeout reached
+          resolve(null);
         }
       }, 300);
     });
+  }
+
+  /**
+   * Analyze manufacturing info text to determine if product is Made in India.
+   * More robust than the generic detector.
+   * @param {string} text - The text to analyze
+   * @returns {Object} Detection result with isIndian and confidence
+   */
+  function analyzeManufacturingInfo(text) {
+    const lowerText = text.toLowerCase();
+    
+    // Strong positive indicators
+    const strongIndicators = [
+      'country of origin: india',
+      'country of origin india',
+      'manufactured in india',
+      'made in india',
+      'origin: india',
+      'मेड इन इंडिया',
+      'भारत में निर्मित'
+    ];
+    
+    // Check for strong indicators
+    for (const indicator of strongIndicators) {
+      if (lowerText.includes(indicator)) {
+        console.log('[MeraProduct] Strong indicator found:', indicator);
+        return {
+          isIndian: true,
+          confidence: 1.0,
+          indicator: indicator,
+          manufacturer: extractManufacturerAddress(text)
+        };
+      }
+    }
+    
+    // Check if "Country of Origin" or "Origin" is followed by "India"
+    const originRegex = /(?:country of origin|origin)[\s:]+([^\n,]+)/i;
+    const match = text.match(originRegex);
+    if (match && match[1].toLowerCase().includes('india')) {
+      console.log('[MeraProduct] Origin regex matched India');
+      return {
+        isIndian: true,
+        confidence: 0.95,
+        indicator: 'Country of Origin: India',
+        manufacturer: extractManufacturerAddress(text)
+      };
+    }
+    
+    // Check manufacturer address for India
+    if (lowerText.includes('manufacturer') && lowerText.includes('india')) {
+      const addressMatch = text.match(/manufacturer[^:]*:?\s*([^.]+india[^.]*)/i);
+      if (addressMatch) {
+        console.log('[MeraProduct] Manufacturer address contains India');
+        return {
+          isIndian: true,
+          confidence: 0.85,
+          indicator: 'Manufacturer address in India',
+          manufacturer: addressMatch[1].trim()
+        };
+      }
+    }
+    
+    // Fallback to the generic detector
+    console.log('[MeraProduct] Using fallback generic detector');
+    return detector.detectFromText(text);
+  }
+
+  /**
+   * Extract manufacturer address from text
+   */
+  function extractManufacturerAddress(text) {
+    const patterns = [
+      /manufacturer[^:]*:\s*([^\n]+)/i,
+      /manufactured by[^:]*:\s*([^\n]+)/i,
+      /address[^:]*:\s*([^\n]+india[^\n]*)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        return match[1].trim();
+      }
+    }
+    
+    return null;
   }
 
   /**
@@ -305,16 +541,22 @@
    */
   function initialize() {
     console.log('[MeraProduct] Flipkart content script loaded');
+    console.log('[MeraProduct] Waiting 10 seconds for page to fully load...');
 
-    // Process immediately if page is already loaded
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', processPage);
-    } else {
-      setTimeout(processPage, 500); // Small delay to ensure page is ready
-    }
+    // Wait 10 seconds before starting the detection process
+    setTimeout(() => {
+      console.log('[MeraProduct] Starting detection process after 10 second delay.');
+      
+      // Process immediately if page is already loaded
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', processPage);
+      } else {
+        processPage();
+      }
 
-    // Set up observer for dynamic content
-    setupObserver();
+      // Set up observer for dynamic content
+      setupObserver();
+    }, 10000); // 10 second delay
 
     // Handle navigation in single-page apps
     let currentUrl = window.location.href;
@@ -322,7 +564,8 @@
       if (window.location.href !== currentUrl) {
         currentUrl = window.location.href;
         hasProcessed = false;
-        setTimeout(processPage, 1000);
+        console.log('[MeraProduct] URL changed. Waiting 10 seconds before processing...');
+        setTimeout(processPage, 10000);
       }
     }, 1000);
   }
