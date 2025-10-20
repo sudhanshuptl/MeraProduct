@@ -111,8 +111,8 @@ async function loadHistory() {
 
 elements.clearHistoryBtn.onclick = async () => { if (confirm('Are you sure you want to clear all history? This action cannot be undone.')) { await storage.clearHistory(); await loadHistory(); } };
 elements.refreshBtn.onclick = async () => { elements.refreshBtn.style.transform = 'rotate(360deg)'; await loadHistory(); setTimeout(() => elements.refreshBtn.style.transform = 'rotate(0deg)', 500); };
-elements.settingsBtn.onclick = () => { elements.settingsPanel.style.display = 'block'; loadSettings(); };
-elements.closeSettingsBtn.onclick = () => elements.settingsPanel.style.display = 'none';
+elements.settingsBtn.onclick = () => { elements.settingsPanel.style.display = 'flex'; elements.settingsPanel.classList.add('visible'); loadSettings(); };
+elements.closeSettingsBtn.onclick = () => { elements.settingsPanel.classList.remove('visible'); setTimeout(() => elements.settingsPanel.style.display = 'none', 300); };
 
 function loadSettings() {
   elements.debugModeToggle.checked = localStorage.getItem('meraproduct_debug') === 'true';
