@@ -1,11 +1,3 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
-# help mme create a public policy document in markup
-
-Of course. Here is a public privacy policy for your MeraProduct Chrome Extension, formatted in Markdown. This policy is based on the functionalities and permissions we've discussed.
-
-***
-
 # Privacy Policy for MeraProduct Chrome Extension
 
 ## Introduction
