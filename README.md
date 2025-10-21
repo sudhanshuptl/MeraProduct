@@ -1,214 +1,316 @@
 # MeraProduct 🇮🇳
 
-MeraProduct is a lightweight Chrome extension built to empower users to make informed and patriotic purchase decisions.  
-It automatically detects whether the product you’re viewing online is *Made in India* and displays key insights like origin, manufacturer, and review summaries.
+**Identify Made in India products while shopping online**
+
+MeraProduct is a Chrome extension that automatically detects "Made in India" products on e-commerce platforms like Amazon and Flipkart. It displays a badge and detailed origin information to help you make informed purchase decisions.
+
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/sudhanshuptl/MeraProduct)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
+[![Manifest](https://img.shields.io/badge/manifest-v3-orange.svg)](manifest.json)
 
 ---
 
 ## ✨ Features
 
-- Instantly highlights **Made in India** products while browsing.
-- Works seamlessly on **Amazon**, **Flipkart**, and other major eCommerce platforms.
-- Shows product **origin**, **manufacturer details**, and **average review score**.
-- Displays an **Indian flag badge** beside verified Indian-made listings.
-- Privacy-first – all origin detection happens locally in your browser.
+- 🇮🇳 **Instant Detection** - Highlights "Made in India" products with a badge
+- 🛡️ **Privacy-First** - All processing happens locally in your browser
+- 🎯 **Accurate** - Uses direct extraction from "Country of Origin" and "Manufacturer" fields
+- 📊 **Confidence Score** - Shows how certain we are (60% country + 50% manufacturer = 100% max)
+- 🎨 **Color-Coded** - Green (≥70%), Yellow (<70%), Red (Not India)
+- 📱 **Clickable Badge** - View detailed product information
+- 📜 **History** - Track all Indian products you've viewed
+- 🐛 **Debug Mode** - Toggle detailed logging for troubleshooting
+
+**Supported Platforms:**
+- ✅ Amazon India
+- ✅ Flipkart (coming soon)
 
 ---
 
-## 🧠 How It Works
+## 🚀 Quick Start
 
-1. The extension scans the product details section when you open an eCommerce product page.
-2. It detects “Country of Origin” tags or similar metadata using a content script.
-3. If the product is made in India, it instantly displays a 🇮🇳 badge and origin message.
-4. Upcoming releases will include review aggregation and “Indian alternative” suggestions.
+### For Users
 
----
+1. **Install from Chrome Web Store** (Coming Soon)
+2. Browse Amazon or Flipkart
+3. Look for the 🇮🇳 badge on product pages!
 
-## 🚀 Getting Started
+### For Developers
 
-### 1. Clone the Repository
-```bash
+\`\`\`bash
+# 1. Clone & Install
 git clone https://github.com/sudhanshuptl/MeraProduct.git
 cd MeraProduct
-```
-
-### 2. Install Dependencies & Build
-This project uses `npm` to manage dependencies and run build scripts.
-```bash
-# Install project dependencies
 npm install
 
-# Build the extension. This creates the `dist` folder with proper icons.
+# 2. Build
 npm run build:simple
-```
 
-### 3. Load the Extension in Chrome
-1.  Open Google Chrome and navigate to `chrome://extensions/`.
-2.  Enable **Developer mode** using the toggle switch in the top-right corner.
-3.  Click the **“Load unpacked”** button.
-4.  Select the **`dist`** folder from the project directory (NOT the root folder).
+# 3. Load in Chrome
+# Open chrome://extensions/
+# Enable "Developer mode"
+# Click "Load unpacked"
+# Select the "dist" folder
+\`\`\`
 
-The MeraProduct extension icon should now appear in your Chrome toolbar!
-
----
-
-## 💻 Development Workflow
-
-For active development, use the `watch` script:
-
-```bash
-# Automatically rebuild the extension into the `dist` folder when source files change
+**Development Mode:**
+\`\`\`bash
+# Auto-rebuild on file changes
 npm run watch
-```
-After the initial build, you only need to **reload the extension** in `chrome://extensions/` to apply your changes. You do not need to remove and re-add it.
 
----
-
-## 🧩 Tech Stack
-
-- **Manifest v3** Chrome Architecture  
-- **JavaScript** for DOM parsing & logic  
-- **HTML/CSS** for extension UI  
-- (Optional) **Node.js** for review API integration  
-
----
-
-## �️ Indian Locations Configuration
-
-MeraProduct uses a **centralized configuration file** (`src/config/indian-locations.js`) for all Indian geographic data detection. This makes it easy to add new locations and maintain consistency across all platforms.
-
-### What's Included
-The configuration includes:
-- **PIN Codes**: Validates 6-digit codes in range 100000-855999
-- **Industrial Areas**: 13+ zones (SIPCOT, SIDCO, MIDC, GIDC, KASEZ, SEEPZ, NEPZ, Okhla, SEZ, etc.)
-- **Major Cities**: 100+ cities including metro and tier-2 cities with name variations
-- **States & UTs**: All 28 states and 8 union territories
-
-### Adding New Locations
-
-To add new Indian cities, industrial areas, or states:
-
-1. **Open the configuration file:**
-   ```
-   src/config/indian-locations.js
-   ```
-
-2. **Add your location to the appropriate array:**
-   ```javascript
-   // For industrial areas:
-   industrialAreas: [
-     'your-new-industrial-area',
-     ...
-   ]
-   
-   // For cities:
-   majorCities: [
-     'yourcity',
-     ...
-   ]
-   
-   // For states:
-   states: [
-     'your state',
-     ...
-   ]
-   ```
-
-3. **Save the file** - Changes apply to both Amazon and Flipkart automatically!
-
-4. **Reload the extension** in `chrome://extensions/` to test
-
-### Location Detection Logic
-The `IndianLocations.isIndianAddress()` function checks in this order:
-1. ✅ **PIN Code** validation (100000-855999)
-2. ✅ **Industrial Areas** (SIPCOT, MIDC, Okhla, SEZ, etc.)
-3. ✅ **Cities** (Mumbai, Bangalore, Pune, etc.)
-4. ✅ **States** (Maharashtra, Tamil Nadu, etc.)
-5. ✅ **Country** ("India" explicitly mentioned)
-
-Returns: `{ isIndian: boolean, matchType: string, matchValue: string }`
-
-**Example:**
-```javascript
-IndianLocations.isIndianAddress("Plot No. 5, MIDC Pune, Maharashtra 411019")
-// Returns: { isIndian: true, matchType: "Industrial Area", matchValue: "midc" }
-```
-
----
-
-## �🛠 Future Enhancements
-
-- Support for more websites (Myntra, Croma)
-- AI-driven product comparison for Indian-made alternatives
-- Review sentiment visualization
-- Language localization (Hindi, English)
+# After changes, just reload extension in chrome://extensions/
+\`\`\`
 
 ---
 
 ## 📖 Documentation
 
-Comprehensive documentation is available in the [`docs/`](docs/) folder:
+### For Developers
+👉 **[DEVELOPMENT.md](DEVELOPMENT.md)** - Complete developer guide covering:
+  - Architecture & project structure
+  - Setup & development workflow  
+  - Detection system explained
+  - Debugging & logging
+  - Bug fixes history
+  - Features implemented
+  - Testing & deployment
 
-- **[Documentation Index](docs/README.md)** - Complete documentation navigation
-- **[Usage Guide](docs/guides/USAGE_GUIDE.md)** - How to use all features
-- **[Clickable Badge Guide](docs/guides/CLICKABLE_BADGE_GUIDE.md)** - Interactive badge system
-- **[Debug Mode Guide](docs/debug/DEBUG_MODE_GUIDE.md)** - Troubleshooting and debugging
-- **[Feature Documentation](docs/features/)** - Detailed feature descriptions
-- **[Bug Fixes](docs/fixes/)** - History of fixes and improvements
-
-**[📖 View Full Documentation Index →](docs/README.md)**
-
----
-
-## 🚀 Chrome Web Store Deployment
-
-Ready to deploy MeraProduct to the Chrome Web Store? Everything is set up for you!
-
-### Quick Deploy
-```bash
-# Create production-ready package
-npm run build:production
-
-# This generates:
-# ✅ meraproduct-v1.0.0.zip (ready for Chrome Web Store)
-# ✅ DEPLOYMENT_CHECKLIST.txt (submission guide)
-```
-
-### Deployment Resources
-- **[Quick Deploy Guide](QUICK_DEPLOY.md)** - 3-step deployment process
-- **[Full Deployment Guide](docs/guides/CHROME_STORE_DEPLOYMENT.md)** - Comprehensive submission guide with store listing templates
-- **[Deployment Checklist](DEPLOYMENT_CHECKLIST.txt)** - Auto-generated submission checklist
-
-### What's Included
-✅ Production-optimized ZIP package (49 KB)  
-✅ All required icons (16x16, 32x32, 48x48, 128x128)  
-✅ Validated manifest.json  
-✅ Store listing templates  
-✅ Privacy policy template  
-✅ Screenshot guidelines  
-
-**Ready to publish?** Follow the [Quick Deploy Guide](QUICK_DEPLOY.md) to upload to Chrome Web Store!
+### For AI Assistants
+👉 **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Coding guidelines and patterns
 
 ---
 
-## �🙌 Contributing
+## 🎯 How It Works
 
-Contributions are welcome! Please open a pull request or raise an issue with site support suggestions or feature improvements.
+\`\`\`
+1. Page Load → Wait for Amazon to load product details (10s + smart polling)
+2. Extract Data:
+   ├── Country of Origin (from product details)
+   ├── Manufacturer address (from product details)
+   └── Product metadata (title, image, features)
+3. Calculate Confidence:
+   ├── Country = "India" → +60%
+   ├── Manufacturer in India → +50%
+   └── Maximum: 100%
+4. Display Badge:
+   ├── ≥70% → 🟢 Green "Made in India"
+   ├── <70% → 🟡 Yellow "Possibly India"
+   └── 0% → 🔴 Red "Not India"
+5. Save to History (if Indian product)
+\`\`\`
 
-### For Contributors
-1. Review the [Documentation Index](docs/README.md) to understand the project
-2. Check [GitHub Issues](https://github.com/sudhanshuptl/MeraProduct/issues) for open tasks
-3. Follow the coding guidelines in [Copilot Instructions](.github/copilot-instructions.md)
-4. Use [Debug Mode](docs/debug/DEBUG_MODE_GUIDE.md) for testing your changes
+**What makes it accurate:**
+- ✅ Direct extraction from "Country of Origin" field (not guessing!)
+- ✅ Validates manufacturer address against 100+ Indian cities, 35+ states
+- ✅ Handles 5+ different Amazon page layouts (including newer grid design)
+- ✅ Multi-manufacturer detection (picks longest/most complete address)
+- ✅ Smart polling (waits for dynamic content to load)
+
+---
+
+## 🛠️ Tech Stack
+
+- **Manifest V3** - Modern Chrome extension architecture
+- **Vanilla JavaScript** - No frameworks, fast and lightweight
+- **Chrome Extension APIs** - Storage, tabs, runtime messaging
+- **Local Processing** - Privacy-first, no external API calls
+
+---
+
+## 🔧 Configuration
+
+### Debug Mode
+Enable detailed logging to troubleshoot issues:
+
+**Method 1:** Extension Options
+1. Click extension icon → Settings (gear icon)
+2. Toggle "Debug Mode"
+3. Reload product page
+
+**Method 2:** Chrome Console
+\`\`\`javascript
+chrome.storage.local.set({ debugMode: true });
+\`\`\`
+
+### Indian Locations Database
+Located at \`src/config/indian-locations.js\`:
+- 100+ Indian cities
+- 35+ states & union territories
+- 13+ industrial areas (Noida, Gurgaon, Okhla, etc.)
+- PIN code validation
+
+To add new locations, edit this file and rebuild.
+
+---
+
+## 🚀 Deployment
+
+### Chrome Web Store Deployment
+
+**Build Commands:**
+\`\`\`bash
+# Development build (for local testing)
+npm run build:simple        # Basic build with placeholder icons
+npm run build:dev           # Build with debug mode icons
+
+# Production build (for Chrome Web Store)
+npm run build:production    # Optimized production build
+npm run build:store         # Alias for build:production
+
+# Create deployment package (recommended)
+npm run package             # Builds + creates meraproduct-v1.0.0.zip
+
+# Quick deploy (one command)
+npm run deploy              # Same as build:production
+\`\`\`
+
+**Quick Deploy:**
+\`\`\`bash
+# Create production-ready package in one command
+npm run package
+
+# Creates: 
+#   - dist/ folder (optimized code)
+#   - meraproduct-v1.0.0.zip (ready for upload)
+\`\`\`
+
+**Package Contents:**
+- ✅ Optimized code (~49 KB)
+- ✅ All required icons (16, 32, 48, 128)
+- ✅ Validated manifest.json (V3)
+- ✅ Privacy policy compliant
+- ✅ Compressed ZIP for submission
+
+**Submission Workflow:**
+1. **Test Locally**
+   - Load unpacked extension in `chrome://extensions/`
+   - Test on Amazon/Flipkart products
+   - Verify badge, popup, settings, history
+
+2. **Prepare Submission**
+   - Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
+   - Click "New Item" (or update existing)
+   - Upload: `meraproduct-v1.0.0.zip`
+
+3. **Required Assets**
+   - Icon: 128×128 PNG (✅ included)
+   - Screenshots: 1280×800 or 640×400 (minimum 1 required)
+   - Small promotional tile: 440×280 PNG (optional)
+
+4. **Store Listing Info**
+   - **Name:** "MeraProduct - Made in India Detector"
+   - **Summary:** "Detect Made in India products instantly" (50 chars max)
+   - **Category:** Shopping
+   - **Language:** English
+
+5. **Privacy & Permissions**
+   - **Permissions Used:**
+     - `storage` - Save product history locally
+     - `activeTab` - Read product information on e-commerce sites
+   - **Privacy:** No data collection, all processing local
+   - Single purpose: Identify Made in India products
+
+6. **Submit & Wait**
+   - Review time: 1-3 business days
+   - Monitor review status in dashboard
+   - Respond to any feedback promptly
+
+**Post-Launch:**
+- Track analytics and reviews
+- Respond to user feedback
+- Monitor crash reports
+- Plan feature updates
+
+See **[DEVELOPMENT.md#deployment](DEVELOPMENT.md#deployment)** for complete pre-deployment checklist and troubleshooting.
+
+---
+
+## 🧪 Testing
+
+\`\`\`bash
+# Run unit tests
+npm test
+
+# Test on live sites
+npm run test:sites  # Opens test products in browser
+\`\`\`
+
+**Manual Testing:**
+1. Test Indian product (Country + Manufacturer) → 🟢 100%
+2. Test Indian product (Country only) → 🟢 60%
+3. Test Indian product (Manufacturer only) → 🟡 50%
+4. Test non-Indian product → 🔴 0%
+5. Test different page layouts (table, grid)
+6. Test Debug Mode ON/OFF
+
+---
+
+## 🙌 Contributing
+
+Contributions welcome! 
+
+**Getting Started:**
+1. Read [DEVELOPMENT.md](DEVELOPMENT.md) for architecture overview
+2. Check [GitHub Issues](https://github.com/sudhanshuptl/MeraProduct/issues)
+3. Fork repository and create feature branch
+4. Make changes with tests
+5. Submit pull request
+
+**Code Guidelines:**
+- Follow existing code style (2 spaces, camelCase)
+- Add comments for complex logic
+- Write meaningful commit messages
+- Update DEVELOPMENT.md if needed
+- Test with Debug Mode ON
+
+---
+
+## 📝 Project Structure
+
+\`\`\`
+MeraProduct/
+├── DEVELOPMENT.md              # 📖 Complete developer documentation
+├── README.md                   # 👋 This file
+├── manifest.json               # Extension manifest
+├── package.json               # npm scripts & dependencies
+├── .github/
+│   └── copilot-instructions.md # AI assistant guidelines
+├── src/
+│   ├── content/
+│   │   ├── content-amazon.js   # Amazon detection (main logic)
+│   │   ├── content-flipkart.js # Flipkart detection
+│   │   └── content.css         # Badge & panel styles
+│   ├── popup/                  # Extension popup UI
+│   ├── options/                # Settings page
+│   ├── background/             # Service worker
+│   ├── config/
+│   │   └── indian-locations.js # Location database
+│   └── utils/
+│       ├── logger.js           # Logging system
+│       ├── origin-detector.js  # Detection utilities
+│       └── storage.js          # Storage helpers
+├── tests/                      # Unit tests
+└── scripts/                    # Build scripts
+\`\`\`
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **Apache 2.0** – see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **Apache 2.0** License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## ❤️ Made in India
+## ❤️ Support
+
+- **Issues:** [GitHub Issues](https://github.com/sudhanshuptl/MeraProduct/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/sudhanshuptl/MeraProduct/discussions)
+- **Email:** sudhanshuptl13@gmail.com
+
+---
+
+## 🇮🇳 Made in India
 
 Proudly developed to support the *Atmanirbhar Bharat* initiative.
+
+**Star ⭐ this repo if you find it useful!**
