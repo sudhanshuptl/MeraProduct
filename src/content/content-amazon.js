@@ -98,14 +98,14 @@
    * Searches for the specific "Country of Origin" field without requiring clicks
    */
   function extractCountryOfOrigin() {
-    log.group('� Country of Origin Detection');
-    log.info('Starting extraction process...');
+    log.group('🌍 Country of Origin Detection');
+    log.debug('Starting extraction process...');
     
     // Method 0: Check for grid layout first (newer Amazon design)
     const gridValue = extractFromGridLayout(/country\s+of\s+origin/i);
     if (gridValue && gridValue.length < 50) {
-      log.success(`✅ EXTRACTED Country of Origin: "${gridValue}"`);
-      log.data('Extraction method', 'Grid layout (a-fixed-left-grid)');
+      log.debug(`✅ EXTRACTED Country of Origin: "${gridValue}"`);
+      log.debug('Extraction method', 'Grid layout (a-fixed-left-grid)');
       log.groupEnd();
       return gridValue;
     }
@@ -147,8 +147,8 @@
           const matches = text.match(/country\s+of\s+origin[:\s]*([A-Za-z\s]+)/i);
           if (matches && matches[1]) {
             const country = matches[1].trim();
-            log.success(`✅ EXTRACTED Country of Origin: "${country}"`);
-            log.data('Extraction method', `Inline text (${pattern.name})`);
+            log.debug(`✅ EXTRACTED Country of Origin: "${country}"`);
+            log.debug('Extraction method', `Inline text (${pattern.name})`);
             log.groupEnd();
             return country;
           }
@@ -168,9 +168,9 @@
                 const value = nextCell.textContent.trim();
                 // Exclude if it's another label (like "Manufacturer")
                 if (value && value.length < 50 && !/manufacturer|importer|packer/i.test(value)) {
-                  log.success(`✅ EXTRACTED Country of Origin: "${value}"`);
-                  log.data('Extraction method', 'Next table cell (TH/TD sibling)');
-                  log.data('Parent row structure', `${allCells.length} cells found`);
+                  log.debug(`✅ EXTRACTED Country of Origin: "${value}"`);
+                  log.debug('Extraction method', 'Next table cell (TH/TD sibling)');
+                  log.debug('Parent row structure', `${allCells.length} cells found`);
                   log.groupEnd();
                   return value;
                 }
@@ -182,8 +182,8 @@
             if (nextSibling && (nextSibling.tagName === 'TH' || nextSibling.tagName === 'TD')) {
               const siblingText = nextSibling.textContent.trim();
               if (siblingText && siblingText.length < 50 && !/manufacturer|importer|packer/i.test(siblingText)) {
-                log.success(`✅ EXTRACTED Country of Origin: "${siblingText}"`);
-                log.data('Extraction method', `Next sibling ${nextSibling.tagName} element`);
+                log.debug(`✅ EXTRACTED Country of Origin: "${siblingText}"`);
+                log.debug('Extraction method', `Next sibling ${nextSibling.tagName} element`);
                 log.groupEnd();
                 return siblingText;
               }
@@ -195,9 +195,9 @@
             const cells = element.querySelectorAll('td');
             if (cells.length >= 2) {
               const value = cells[1].textContent.trim();
-              log.success(`✅ EXTRACTED Country of Origin: "${value}"`);
-              log.data('Extraction method', 'Table cell (TD element)');
-              log.data('Table structure', `${cells.length} cells found`);
+              log.debug(`✅ EXTRACTED Country of Origin: "${value}"`);
+              log.debug('Extraction method', 'Table cell (TD element)');
+              log.debug('Table structure', `${cells.length} cells found`);
               log.groupEnd();
               return value;
             }
@@ -208,9 +208,9 @@
               const value = headerCells[1].textContent.trim();
               // Exclude if it's another label
               if (value && !/manufacturer|importer|packer/i.test(value)) {
-                log.success(`✅ EXTRACTED Country of Origin: "${value}"`);
-                log.data('Extraction method', 'Table header cell (TH element)');
-                log.data('Table structure', `${headerCells.length} header cells found`);
+                log.debug(`✅ EXTRACTED Country of Origin: "${value}"`);
+                log.debug('Extraction method', 'Table header cell (TH element)');
+                log.debug('Table structure', `${headerCells.length} header cells found`);
                 log.groupEnd();
                 return value;
               }
@@ -222,8 +222,8 @@
           if (nextSibling) {
             const siblingText = nextSibling.textContent.trim();
             if (siblingText && siblingText.length < 50) {
-              log.success(`✅ EXTRACTED Country of Origin: "${siblingText}"`);
-              log.data('Extraction method', 'Next sibling element');
+              log.debug(`✅ EXTRACTED Country of Origin: "${siblingText}"`);
+              log.debug('Extraction method', 'Next sibling element');
               log.groupEnd();
               return siblingText;
             }
@@ -233,8 +233,8 @@
           const valueElement = element.querySelector('[class*="value"], [class*="Value"]');
           if (valueElement) {
             const value = valueElement.textContent.trim();
-            log.success(`✅ EXTRACTED Country of Origin: "${value}"`);
-            log.data('Extraction method', 'Child element with "value" class');
+            log.debug(`✅ EXTRACTED Country of Origin: "${value}"`);
+            log.debug('Extraction method', 'Child element with "value" class');
             log.groupEnd();
             return value;
           }
@@ -242,8 +242,8 @@
       }
     }
     
-    log.debug('Country of Origin not found on page');
-    log.info('Will fall back to text analysis method');
+    log.debug('⚠️ Country of Origin NOT FOUND in product details');
+    log.debug('Will fall back to text analysis method');
     log.groupEnd();
     return null;
   }
@@ -256,7 +256,7 @@
    */
   function extractManufacturerInfo() {
     log.group('🏭 Manufacturer Detection');
-    log.info('Starting manufacturer extraction...');
+    log.debug('Starting manufacturer extraction...');
     
     // Store ALL found manufacturers and pick the longest one
     let allManufacturers = [];
@@ -380,9 +380,9 @@
       const longest = allManufacturers[0];
       
       log.debug(`Selected longest manufacturer: ${longest.length} chars`);
-      log.success(`✅ EXTRACTED Manufacturer: "${longest.value.substring(0, 150)}${longest.value.length > 150 ? '...' : ''}"`);
-      log.data('Extraction method', longest.method);
-      log.data('Full manufacturer text length', `${longest.length} characters`);
+      log.debug(`✅ EXTRACTED Manufacturer: "${longest.value.substring(0, 150)}${longest.value.length > 150 ? '...' : ''}"`);
+      log.debug('Extraction method', longest.method);
+      log.debug('Full manufacturer text length', `${longest.length} characters`);
       log.groupEnd();
       return longest.value;
     }
@@ -413,7 +413,7 @@
     const titleElement = document.querySelector(AMAZON_SELECTORS.productTitle);
     if (titleElement) {
       productInfo.title = titleElement.textContent.trim();
-      log.data('Product Title', productInfo.title.substring(0, 80) + (productInfo.title.length > 80 ? '...' : ''));
+      log.debug('Product Title', productInfo.title.substring(0, 80) + (productInfo.title.length > 80 ? '...' : ''));
     } else {
       log.debug('Product title not found');
     }
@@ -422,28 +422,28 @@
     const imageElement = document.querySelector(AMAZON_SELECTORS.productImage);
     if (imageElement) {
       productInfo.image = imageElement.src || imageElement.getAttribute('data-old-hires') || '';
-      log.data('Product Image', productInfo.image ? '✓ Found' : '✗ Not found');
+      log.debug('Product Image', productInfo.image ? '✓ Found' : '✗ Not found');
     }
 
     // Extract feature bullets
     const featuresElement = document.querySelector(AMAZON_SELECTORS.featureBullets);
     if (featuresElement) {
       productInfo.features = featuresElement.textContent.trim();
-      log.data('Features/Bullets', `${productInfo.features.length} characters`);
+      log.debug('Features/Bullets', `${productInfo.features.length} characters`);
     }
 
     // Extract product details
     const detailsElement = document.querySelector(AMAZON_SELECTORS.productDetails);
     if (detailsElement) {
       productInfo.details = detailsElement.textContent.trim();
-      log.data('Product Details', `${productInfo.details.length} characters`);
+      log.debug('Product Details', `${productInfo.details.length} characters`);
     }
 
     // Extract additional information
     const additionalElement = document.querySelector(AMAZON_SELECTORS.additionalInfo);
     if (additionalElement) {
       productInfo.additionalInfo = additionalElement.textContent.trim();
-      log.data('Additional Info', `${productInfo.additionalInfo.length} characters`);
+      log.debug('Additional Info', `${productInfo.additionalInfo.length} characters`);
     }
 
     log.groupEnd();
@@ -452,14 +452,14 @@
     const countryOfOrigin = extractCountryOfOrigin();
     if (countryOfOrigin) {
       productInfo.countryOfOrigin = countryOfOrigin;
-      log.info(`✅ Country of Origin stored: "${countryOfOrigin}"`);
+      log.debug(`✅ Country of Origin stored: "${countryOfOrigin}"`);
     }
 
     // Extract Manufacturer directly (this creates its own log group)
     const manufacturer = extractManufacturerInfo();
     if (manufacturer) {
       productInfo.manufacturer = manufacturer;
-      log.info(`✅ Manufacturer stored: "${manufacturer.substring(0, 100)}${manufacturer.length > 100 ? '...' : ''}"`);
+      log.debug(`✅ Manufacturer stored: "${manufacturer.substring(0, 100)}${manufacturer.length > 100 ? '...' : ''}"`);
     }
 
     // Combine all text for analysis
@@ -477,7 +477,7 @@
       log.verbose('Combined text now includes explicit Manufacturer');
     }
 
-    log.data('Total text for analysis', `${productInfo.allText.length} characters`);
+    log.debug('Total text for analysis', `${productInfo.allText.length} characters`);
 
     return productInfo;
   }
@@ -559,7 +559,7 @@
 
     try {
       log.group('🚀 Processing Amazon Product Page');
-      log.info(`URL: ${window.location.href}`);
+      log.debug(`URL: ${window.location.href}`);
       
       const productInfo = extractProductInfo();
       
@@ -571,7 +571,7 @@
         return;
       }
 
-      log.info('Product information extracted successfully');
+      log.debug('Product information extracted successfully');
       log.group('🔍 Origin Detection Analysis');
 
       // New Confidence Scoring System
@@ -589,10 +589,10 @@
           hasCountryOrigin = true;
           confidence += 0.60; // 60% for Country of Origin = India
           indicators.push('Country of Origin: India');
-          log.success('✅ Country of Origin: India (+60%)');
+          log.debug('✅ Country of Origin: India (+60%)');
         } else {
           // Confirmed NOT from India
-          log.info(`🚫 Country of Origin: ${productInfo.countryOfOrigin} (NOT India)`);
+          log.debug(`🚫 Country of Origin: ${productInfo.countryOfOrigin} (NOT India)`);
           result = {
             isIndian: false,
             confidence: 1.0,
@@ -614,7 +614,7 @@
           hasManufacturerIndia = true;
           confidence += 0.50; // 50% for Indian manufacturer
           indicators.push('Manufacturer in India');
-          log.success('✅ Manufacturer Address: India (+50%)');
+          log.debug('✅ Manufacturer Address: India (+50%)');
         } else {
           log.debug('⚠️ Manufacturer address does not appear to be Indian');
         }
@@ -632,21 +632,21 @@
                     hasCountryOrigin ? 'Country of Origin' : 'Manufacturer Address'
           };
           
-          log.info('═══════════════════════════════════════');
+          log.debug('═══════════════════════════════════════');
           log.success('🇮🇳 RESULT: MADE IN INDIA ✅');
-          log.info('═══════════════════════════════════════');
-          log.data('Confidence', `${Math.round(confidence * 100)}%`);
-          log.data('Based on', result.indicator);
-          log.data('Detection Method', result.method);
+          log.debug('═══════════════════════════════════════');
+          log.debug('Confidence', `${Math.round(confidence * 100)}%`);
+          log.debug('Based on', result.indicator);
+          log.debug('Detection Method', result.method);
         } else {
           // No explicit indicators found, fallback to text analysis
-          log.info('No explicit Country of Origin or Manufacturer found');
-          log.info('Falling back to text pattern analysis...');
+          log.debug('No explicit Country of Origin or Manufacturer found');
+          log.debug('Falling back to text pattern analysis...');
           result = detector.detectFromText(productInfo.allText);
           result.method = 'Text Pattern Analysis';
-          log.data('Analysis Result', result.isIndian ? '🇮🇳 Made in India' : '🚫 Not Made in India');
-          log.data('Confidence', `${Math.round(result.confidence * 100)}%`);
-          log.data('Indicator', result.indicator);
+          log.debug('Analysis Result', result.isIndian ? '🇮🇳 Made in India' : '🚫 Not Made in India');
+          log.debug('Confidence', `${Math.round(result.confidence * 100)}%`);
+          log.debug('Indicator', result.indicator);
         }
       }
       
@@ -658,7 +658,7 @@
         // Use explicitly extracted manufacturer if available
         const manufacturer = productInfo.manufacturer || detector.extractManufacturer(productInfo.allText);
         if (manufacturer) {
-          log.success(`✅ MANUFACTURER FOUND: "${manufacturer.substring(0, 100)}${manufacturer.length > 100 ? '...' : ''}"`);
+          log.debug(`✅ MANUFACTURER FOUND: "${manufacturer.substring(0, 100)}${manufacturer.length > 100 ? '...' : ''}"`);
           log.verbose(productInfo.manufacturer ? 
             'Extracted from product details table' : 
             'Extracted from product text analysis');
@@ -669,9 +669,9 @@
       }
       
       if (result.isIndian && result.confidence > 0.5) {
-        log.success('═══════════════════════════════════════');
-        log.success('  🇮🇳 DISPLAYING INDIAN BADGE');
-        log.success('═══════════════════════════════════════');
+        log.debug('═══════════════════════════════════════');
+        log.info('  🇮🇳 DISPLAYING INDIAN BADGE');
+        log.debug('═══════════════════════════════════════');
         
         await insertIndianBadge(result, productInfo);
         hasProcessed = true;
@@ -693,13 +693,13 @@
           indicator: result.indicator
         });
         
-        log.success('Product saved to history');
+        log.info('Product saved to history');
       } else {
         // Show "NOT MADE IN INDIA" badge for non-Indian products
-        log.info('═══════════════════════════════════════');
+        log.debug('═══════════════════════════════════════');
         log.info('  🚫 DISPLAYING NON-INDIAN BADGE');
-        log.info('═══════════════════════════════════════');
-        log.data('Reason', result.indicator || 'Country of Origin is not India');
+        log.debug('═══════════════════════════════════════');
+        log.debug('Reason', result.indicator || 'Country of Origin is not India');
         
         await insertFloatingBadge(false, result, productInfo);
         hasProcessed = true;
