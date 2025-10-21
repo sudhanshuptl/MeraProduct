@@ -73,7 +73,70 @@ After the initial build, you only need to **reload the extension** in `chrome://
 
 ---
 
-## 🛠 Future Enhancements
+## �️ Indian Locations Configuration
+
+MeraProduct uses a **centralized configuration file** (`src/config/indian-locations.js`) for all Indian geographic data detection. This makes it easy to add new locations and maintain consistency across all platforms.
+
+### What's Included
+The configuration includes:
+- **PIN Codes**: Validates 6-digit codes in range 100000-855999
+- **Industrial Areas**: 13+ zones (SIPCOT, SIDCO, MIDC, GIDC, KASEZ, SEEPZ, NEPZ, Okhla, SEZ, etc.)
+- **Major Cities**: 100+ cities including metro and tier-2 cities with name variations
+- **States & UTs**: All 28 states and 8 union territories
+
+### Adding New Locations
+
+To add new Indian cities, industrial areas, or states:
+
+1. **Open the configuration file:**
+   ```
+   src/config/indian-locations.js
+   ```
+
+2. **Add your location to the appropriate array:**
+   ```javascript
+   // For industrial areas:
+   industrialAreas: [
+     'your-new-industrial-area',
+     ...
+   ]
+   
+   // For cities:
+   majorCities: [
+     'yourcity',
+     ...
+   ]
+   
+   // For states:
+   states: [
+     'your state',
+     ...
+   ]
+   ```
+
+3. **Save the file** - Changes apply to both Amazon and Flipkart automatically!
+
+4. **Reload the extension** in `chrome://extensions/` to test
+
+### Location Detection Logic
+The `IndianLocations.isIndianAddress()` function checks in this order:
+1. ✅ **PIN Code** validation (100000-855999)
+2. ✅ **Industrial Areas** (SIPCOT, MIDC, Okhla, SEZ, etc.)
+3. ✅ **Cities** (Mumbai, Bangalore, Pune, etc.)
+4. ✅ **States** (Maharashtra, Tamil Nadu, etc.)
+5. ✅ **Country** ("India" explicitly mentioned)
+
+Returns: `{ isIndian: boolean, matchType: string, matchValue: string }`
+
+**Example:**
+```javascript
+IndianLocations.isIndianAddress("Plot No. 5, MIDC Pune, Maharashtra 411019")
+// Returns: { isIndian: true, matchType: "Industrial Area", matchValue: "midc" }
+```
+
+---
+
+## �🛠 Future Enhancements
 
 - Support for more websites (Myntra, Croma)
 - AI-driven product comparison for Indian-made alternatives

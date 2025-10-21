@@ -11,6 +11,18 @@
   const storage = new ProductStorage();
   let hasProcessed = false;
 
+  // Comprehensive Indian Address Validation Function
+  // Uses centralized IndianLocations config (src/config/indian-locations.js)
+  function isIndianAddress(addressText) {
+    const result = IndianLocations.isIndianAddress(addressText);
+    
+    if (result.isIndian) {
+      log.debug(`📍 Found Indian address: ${result.matchType} = ${result.matchValue}`);
+    }
+    
+    return result.isIndian;
+  }
+
   // Show simple info message
   log.info('MeraProduct loaded' + (log.debugMode ? ' (Debug Mode ON)' : ''));
   
@@ -53,12 +65,50 @@
   };
 
   /**
+   * Extract value from grid layout (newer Amazon design)
+   * Structure: <div class="a-fixed-left-grid product-facts-detail">
+   *   Left column: <span>Label</span>
+   *   Right column: <span>Value</span>
+   * @param {string} labelPattern - Regex pattern to match label
+   * @returns {string|null} - Extracted value or null
+   */
+  function extractFromGridLayout(labelPattern) {
+    const gridLayouts = document.querySelectorAll('.a-fixed-left-grid.product-facts-detail');
+    
+    for (const grid of gridLayouts) {
+      const leftCol = grid.querySelector('.a-col-left');
+      const rightCol = grid.querySelector('.a-col-right');
+      
+      if (leftCol && rightCol) {
+        const label = leftCol.textContent.trim();
+        if (labelPattern.test(label)) {
+          const value = rightCol.textContent.trim();
+          if (value && value.length > 0) {
+            return value;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
    * Extract "Country of Origin" directly from Amazon page
    * Searches for the specific "Country of Origin" field without requiring clicks
    */
   function extractCountryOfOrigin() {
     log.group('� Country of Origin Detection');
     log.info('Starting extraction process...');
+    
+    // Method 0: Check for grid layout first (newer Amazon design)
+    const gridValue = extractFromGridLayout(/country\s+of\s+origin/i);
+    if (gridValue && gridValue.length < 50) {
+      log.success(`✅ EXTRACTED Country of Origin: "${gridValue}"`);
+      log.data('Extraction method', 'Grid layout (a-fixed-left-grid)');
+      log.groupEnd();
+      return gridValue;
+    }
     
     // Method 1: Look for "Country of Origin" text followed by value
     // Common patterns on Amazon:
@@ -192,7 +242,7 @@
       }
     }
     
-    log.warn('⚠️ Country of Origin NOT FOUND on page');
+    log.debug('Country of Origin not found on page');
     log.info('Will fall back to text analysis method');
     log.groupEnd();
     return null;
@@ -201,13 +251,26 @@
   /**
    * Extract "Manufacturer" directly from Amazon page
    * Similar to Country of Origin extraction but for manufacturer info
+   * NOTE: Amazon may have MULTIPLE manufacturer rows - we want the longest/most complete one!
+   * Supports both table layouts and grid layouts (a-fixed-left-grid)
    */
   function extractManufacturerInfo() {
     log.group('🏭 Manufacturer Detection');
     log.info('Starting manufacturer extraction...');
     
+    // Store ALL found manufacturers and pick the longest one
+    let allManufacturers = [];
+    
+    // Method 0: Check for grid layout first (newer Amazon design)
+    const gridValue = extractFromGridLayout(/^manufacturer$/i);
+    if (gridValue && gridValue.length > 3 && gridValue.length < 500) {
+      allManufacturers.push({ value: gridValue, length: gridValue.length, method: 'Grid layout (a-fixed-left-grid)' });
+      log.verbose(`     Found manufacturer in grid layout: ${gridValue.length} chars`);
+    }
+    
+    // Method 1: Table-based extraction (original method)
     const manufacturerPatterns = [
-      // Pattern 1: Table header (th) with "Manufacturer" label
+      // Pattern 1: Table header (th) with "Manufacturer" label - trim() before matching!
       { selector: 'th', labelPattern: /^manufacturer$/i, name: 'Table Header (TH)' },
       // Pattern 2: Table rows with "Manufacturer" label
       { selector: 'tr', labelPattern: /manufacturer/i, name: 'Table Row' },
@@ -217,14 +280,20 @@
     
     log.debug(`Searching ${manufacturerPatterns.length} pattern types...`);
     
+    // Method 1: Table-based extraction (original method)
+    
     for (const pattern of manufacturerPatterns) {
       const elements = document.querySelectorAll(pattern.selector);
       log.verbose(`  Checking ${elements.length} ${pattern.name}(s)...`);
       
       for (const element of elements) {
-        const text = element.textContent.trim();
+        const text = element.textContent.trim(); // TRIM is crucial here!
         
-        if (pattern.labelPattern.test(text)) {
+        // For pattern 1, check exact match (case insensitive, already trimmed)
+        // For others, use the pattern as-is
+        const isMatch = pattern.labelPattern.test(text.toLowerCase());
+        
+        if (isMatch) {
           log.debug(`  ✓ Found match in ${pattern.name}`);
           log.verbose(`     Raw text: "${text.substring(0, 150)}"`);
           
@@ -232,10 +301,7 @@
           const matches = text.match(/manufacturer[:\s]+(.+)/i);
           if (matches && matches[1] && matches[1].trim().length > 3) {
             const manufacturer = matches[1].trim();
-            log.success(`✅ EXTRACTED Manufacturer: "${manufacturer.substring(0, 100)}"`);
-            log.data('Extraction method', `Inline text (${pattern.name})`);
-            log.groupEnd();
-            return manufacturer;
+            allManufacturers.push({ value: manufacturer, length: manufacturer.length, method: `Inline text (${pattern.name})` });
           }
           
           // For TH elements
@@ -247,29 +313,78 @@
               
               if (currentIndex !== -1 && currentIndex + 1 < allCells.length) {
                 const nextCell = allCells[currentIndex + 1];
-                const value = nextCell.textContent.trim();
-                if (value && value.length > 3 && value.length < 200) {
-                  log.success(`✅ EXTRACTED Manufacturer: "${value.substring(0, 100)}"`);
-                  log.data('Extraction method', 'Next table cell (TH/TD sibling)');
-                  log.groupEnd();
-                  return value;
+                
+                // Try ALL extraction methods
+                const textContent = nextCell.textContent ? nextCell.textContent.trim() : '';
+                const innerText = nextCell.innerText ? nextCell.innerText.trim() : '';
+                const innerHTML = nextCell.innerHTML.trim();
+                
+                log.verbose(`     Cell content lengths - textContent: ${textContent.length}, innerText: ${innerText.length}, innerHTML: ${innerHTML.length}`);
+                
+                // Try to extract from innerHTML if textContent/innerText fail
+                let value = '';
+                
+                // Method 1: Use longest of textContent/innerText
+                if (innerText.length > 0 || textContent.length > 0) {
+                  value = innerText.length > textContent.length ? innerText : textContent;
+                }
+                
+                // Method 2: If both are short/empty, parse innerHTML to strip tags
+                if (value.length < 10 && innerHTML.length > 10) {
+                  const tempDiv = document.createElement('div');
+                  tempDiv.innerHTML = innerHTML;
+                  value = tempDiv.textContent.trim();
+                }
+                
+                // Add to candidates if valid (but don't return yet - we want to find ALL manufacturers first)
+                if (value && value.length > 3 && value.length < 500) {
+                  allManufacturers.push({ value: value, length: value.length, method: 'Next table cell (TH/TD sibling)' });
+                  log.verbose(`     Added manufacturer candidate: ${value.length} chars`);
                 }
               }
             }
             
             const nextSibling = element.nextElementSibling;
             if (nextSibling && (nextSibling.tagName === 'TH' || nextSibling.tagName === 'TD')) {
-              const siblingText = nextSibling.textContent.trim();
-              if (siblingText && siblingText.length > 3 && siblingText.length < 200) {
-                log.success(`✅ EXTRACTED Manufacturer: "${siblingText.substring(0, 100)}"`);
-                log.data('Extraction method', `Next sibling ${nextSibling.tagName} element`);
-                log.groupEnd();
-                return siblingText;
+              const textContent = nextSibling.textContent ? nextSibling.textContent.trim() : '';
+              const innerText = nextSibling.innerText ? nextSibling.innerText.trim() : '';
+              const innerHTML = nextSibling.innerHTML.trim();
+              
+              let siblingText = '';
+              
+              if (innerText.length > 0 || textContent.length > 0) {
+                siblingText = innerText.length > textContent.length ? innerText : textContent;
+              }
+              
+              if (siblingText.length < 10 && innerHTML.length > 10) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = innerHTML;
+                siblingText = tempDiv.textContent.trim();
+              }
+              
+              if (siblingText && siblingText.length > 3 && siblingText.length < 500) {
+                allManufacturers.push({ value: siblingText, length: siblingText.length, method: `Next sibling ${nextSibling.tagName} element` });
               }
             }
           }
         }
       }
+    }
+    
+    // Now pick the LONGEST manufacturer text (most likely to have full address)
+    if (allManufacturers.length > 0) {
+      log.debug(`Found ${allManufacturers.length} manufacturer candidate(s)`);
+      
+      // Sort by length descending and pick the longest
+      allManufacturers.sort((a, b) => b.length - a.length);
+      const longest = allManufacturers[0];
+      
+      log.debug(`Selected longest manufacturer: ${longest.length} chars`);
+      log.success(`✅ EXTRACTED Manufacturer: "${longest.value.substring(0, 150)}${longest.value.length > 150 ? '...' : ''}"`);
+      log.data('Extraction method', longest.method);
+      log.data('Full manufacturer text length', `${longest.length} characters`);
+      log.groupEnd();
+      return longest.value;
     }
     
     log.debug('⚠️ Manufacturer NOT FOUND with direct extraction');
@@ -300,7 +415,7 @@
       productInfo.title = titleElement.textContent.trim();
       log.data('Product Title', productInfo.title.substring(0, 80) + (productInfo.title.length > 80 ? '...' : ''));
     } else {
-      log.warn('Product title not found');
+      log.debug('Product title not found');
     }
 
     // Extract product image
@@ -449,7 +564,7 @@
       const productInfo = extractProductInfo();
       
       if (!productInfo.allText.trim()) {
-        log.warn('No product text found yet, page may still be loading');
+        log.debug('No product text found yet, page may still be loading');
         log.groupEnd();
         // Page might still be loading, try again later
         setTimeout(processPage, 2000);
@@ -459,43 +574,80 @@
       log.info('Product information extracted successfully');
       log.group('🔍 Origin Detection Analysis');
 
-      // Check if we have explicit Country of Origin
+      // New Confidence Scoring System
       let result;
+      let hasCountryOrigin = false;
+      let hasManufacturerIndia = false;
+      let confidence = 0;
+      let indicators = [];
+      
+      // Check Country of Origin
       if (productInfo.countryOfOrigin) {
-        log.info('═══════════════════════════════════════');
-        log.info('  EXPLICIT COUNTRY OF ORIGIN FOUND!');
-        log.info('═══════════════════════════════════════');
-        log.data('Country', productInfo.countryOfOrigin);
-        log.data('Confidence', '100% (Explicit field)');
-        
-        // Check if it's India
         const countryLower = productInfo.countryOfOrigin.toLowerCase().trim();
+        
         if (countryLower === 'india' || countryLower.includes('india')) {
-          result = {
-            isIndian: true,
-            confidence: 1.0, // 100% confidence when explicitly stated
-            indicator: 'Country of Origin: India (Verified)'
-          };
-          log.success('🇮🇳 RESULT: MADE IN INDIA ✅');
-          log.data('Detection Method', 'Explicit Country of Origin field');
+          hasCountryOrigin = true;
+          confidence += 0.60; // 60% for Country of Origin = India
+          indicators.push('Country of Origin: India');
+          log.success('✅ Country of Origin: India (+60%)');
         } else {
+          // Confirmed NOT from India
+          log.info(`🚫 Country of Origin: ${productInfo.countryOfOrigin} (NOT India)`);
           result = {
             isIndian: false,
-            confidence: 1.0, // 100% confidence when explicitly stated
-            indicator: `Country of Origin: ${productInfo.countryOfOrigin}`
+            confidence: 1.0,
+            indicator: `Country of Origin: ${productInfo.countryOfOrigin}`,
+            method: 'Explicit Country of Origin'
           };
-          log.warn(`🚫 RESULT: NOT Made in India (Origin: ${productInfo.countryOfOrigin})`);
-          log.data('Detection Method', 'Explicit Country of Origin field');
+          log.groupEnd();
+          // Skip manufacturer check if confirmed not from India
+          hasCountryOrigin = false;
         }
-      } else {
-        // Fallback to text analysis
-        log.info('No explicit Country of Origin field found');
-        log.info('Using text pattern analysis...');
-        result = detector.detectFromText(productInfo.allText);
-        log.data('Analysis Result', result.isIndian ? '🇮🇳 Made in India' : '🚫 Not Made in India');
-        log.data('Confidence', `${Math.round(result.confidence * 100)}%`);
-        log.data('Indicator', result.indicator);
-        log.data('Detection Method', 'Text pattern matching');
+      }
+      
+      // Check Manufacturer Address (only if not already confirmed NOT India)
+      if (result === undefined && productInfo.manufacturer) {
+        // Check if manufacturer address is Indian using comprehensive validation
+        const isIndianManufacturer = isIndianAddress(productInfo.manufacturer);
+        
+        if (isIndianManufacturer) {
+          hasManufacturerIndia = true;
+          confidence += 0.50; // 50% for Indian manufacturer
+          indicators.push('Manufacturer in India');
+          log.success('✅ Manufacturer Address: India (+50%)');
+        } else {
+          log.debug('⚠️ Manufacturer address does not appear to be Indian');
+        }
+      }
+      
+      // Calculate final result
+      if (result === undefined) {
+        if (hasCountryOrigin || hasManufacturerIndia) {
+          // At least one indicator found
+          result = {
+            isIndian: true,
+            confidence: Math.min(confidence, 1.0), // Cap at 100%
+            indicator: indicators.join(' + '),
+            method: indicators.length === 2 ? 'Country + Manufacturer' : 
+                    hasCountryOrigin ? 'Country of Origin' : 'Manufacturer Address'
+          };
+          
+          log.info('═══════════════════════════════════════');
+          log.success('🇮🇳 RESULT: MADE IN INDIA ✅');
+          log.info('═══════════════════════════════════════');
+          log.data('Confidence', `${Math.round(confidence * 100)}%`);
+          log.data('Based on', result.indicator);
+          log.data('Detection Method', result.method);
+        } else {
+          // No explicit indicators found, fallback to text analysis
+          log.info('No explicit Country of Origin or Manufacturer found');
+          log.info('Falling back to text pattern analysis...');
+          result = detector.detectFromText(productInfo.allText);
+          result.method = 'Text Pattern Analysis';
+          log.data('Analysis Result', result.isIndian ? '🇮🇳 Made in India' : '🚫 Not Made in India');
+          log.data('Confidence', `${Math.round(result.confidence * 100)}%`);
+          log.data('Indicator', result.indicator);
+        }
       }
       
       log.groupEnd(); // End Origin Detection Analysis
@@ -511,7 +663,7 @@
             'Extracted from product details table' : 
             'Extracted from product text analysis');
         } else {
-          log.warn('⚠️ Manufacturer information not found');
+          log.debug('Manufacturer information not available');
         }
         log.groupEnd();
       }
@@ -611,17 +763,199 @@
   }
 
   /**
+   * Wait for product details to be fully loaded
+   * Search for manufacturer info in ALL possible locations on Amazon
+   * Locations checked:
+   * 1. All tables on page (product details tables)
+   * 2. "Product details" section (under <h2>Product details</h2>)
+   * 3. "Additional Information" section
+   */
+  function waitForProductDetails() {
+    return new Promise((resolve) => {
+      log.debug('⏳ Waiting for product details to load...');
+      
+      let attempts = 0;
+      const maxAttempts = 10; // Wait up to 5 seconds (10 × 500ms) - reduced since we already waited 10s
+      let foundAnyManufacturer = false;
+      let longestManufacturer = 0;
+      
+      const checkInterval = setInterval(() => {
+        attempts++;
+        
+        let foundFullManufacturer = false;
+        let currentLongest = 0;
+        let searchedSections = [];
+        
+        // Method 1: Search ALL tables on the page
+        const allTables = document.querySelectorAll('table');
+        searchedSections.push(`${allTables.length} tables`);
+        
+        for (const table of allTables) {
+          const allTHs = table.querySelectorAll('th');
+          
+          for (const th of allTHs) {
+            const thText = th.textContent.trim().toLowerCase();
+            
+            if (thText === 'manufacturer') {
+              foundAnyManufacturer = true;
+              
+              const parentRow = th.parentElement;
+              if (parentRow) {
+                const cells = parentRow.querySelectorAll('th, td');
+                const thIndex = Array.from(cells).indexOf(th);
+                const tdCell = cells[thIndex + 1];
+                
+                if (tdCell) {
+                  const manufacturerText = tdCell.textContent.trim();
+                  const textLength = manufacturerText.length;
+                  
+                  if (textLength > currentLongest) {
+                    currentLongest = textLength;
+                  }
+                  
+                  log.verbose(`Found manufacturer in table "${table.id}": ${textLength} chars`);
+                  
+                  if (textLength > 100 && /registered|office|pvt|ltd|india/i.test(manufacturerText)) {
+                    foundFullManufacturer = true;
+                    log.debug(`✅ Full manufacturer in table "${table.id}" (${textLength} chars)`);
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          
+          if (foundFullManufacturer) break;
+        }
+        
+        // Method 2: Search in "Product details" section (if not found in tables)
+        if (!foundFullManufacturer) {
+          const productDetailsHeadings = Array.from(document.querySelectorAll('h2')).filter(
+            h => /product\s+details/i.test(h.textContent)
+          );
+          
+          searchedSections.push(`${productDetailsHeadings.length} "Product details" sections`);
+          
+          for (const heading of productDetailsHeadings) {
+            // Find tables after this heading
+            let nextElement = heading.nextElementSibling;
+            while (nextElement && !foundFullManufacturer) {
+              if (nextElement.tagName === 'H2' || nextElement.tagName === 'H1') {
+                break; // Stop at next heading
+              }
+              
+              // Check if this element or its children contain tables
+              const tables = nextElement.tagName === 'TABLE' ? 
+                [nextElement] : 
+                nextElement.querySelectorAll('table');
+              
+              for (const table of tables) {
+                const allTHs = table.querySelectorAll('th');
+                
+                for (const th of allTHs) {
+                  const thText = th.textContent.trim().toLowerCase();
+                  
+                  if (thText === 'manufacturer') {
+                    foundAnyManufacturer = true;
+                    
+                    const parentRow = th.parentElement;
+                    if (parentRow) {
+                      const cells = parentRow.querySelectorAll('th, td');
+                      const thIndex = Array.from(cells).indexOf(th);
+                      const tdCell = cells[thIndex + 1];
+                      
+                      if (tdCell) {
+                        const manufacturerText = tdCell.textContent.trim();
+                        const textLength = manufacturerText.length;
+                        
+                        if (textLength > currentLongest) {
+                          currentLongest = textLength;
+                        }
+                        
+                        log.verbose(`Found manufacturer in "Product details" section: ${textLength} chars`);
+                        
+                        if (textLength > 100 && /registered|office|pvt|ltd|india/i.test(manufacturerText)) {
+                          foundFullManufacturer = true;
+                          log.debug(`✅ Full manufacturer in "Product details" section (${textLength} chars)`);
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+                
+                if (foundFullManufacturer) break;
+              }
+              
+              nextElement = nextElement.nextElementSibling;
+            }
+            
+            if (foundFullManufacturer) break;
+          }
+        }
+        
+        log.verbose(`Attempt ${attempts}: Searched ${searchedSections.join(', ')}`);
+        
+        // Update longest found
+        if (currentLongest > longestManufacturer) {
+          longestManufacturer = currentLongest;
+          log.debug(`Longest manufacturer so far: ${longestManufacturer} chars`);
+        }
+        
+        // If we found complete manufacturer info, we're done
+        if (foundFullManufacturer) {
+          clearInterval(checkInterval);
+          log.debug(`Complete manufacturer info loaded after ${(attempts * 0.5).toFixed(1)} seconds`);
+          resolve();
+          return;
+        }
+        
+        // After 5 attempts (2.5 seconds), if we found ANY manufacturer, proceed
+        if (attempts >= 5 && foundAnyManufacturer) {
+          clearInterval(checkInterval);
+          log.debug(`Proceeding after ${(attempts * 0.5).toFixed(1)} seconds with manufacturer data found (${longestManufacturer} chars)`);
+          resolve();
+          return;
+        }
+        
+        // Timeout after max attempts
+        if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          if (foundAnyManufacturer) {
+            log.debug(`Timeout after ${(attempts * 0.5).toFixed(1)} seconds, but found manufacturer data (${longestManufacturer} chars)`);
+          } else {
+            log.debug('No manufacturer data found on page, will rely on Country of Origin only');
+          }
+          resolve();
+        }
+      }, 500); // Check every 500ms
+    });
+  }
+
+  /**
    * Initialize the content script
    */
-  function initialize() {
-    console.log('[MeraProduct] Amazon content script loaded');
-
-    // Process immediately if page is already loaded
+  async function initialize() {
+    log.debug('Amazon content script loaded');
+    
+    // Wait for product details to be fully loaded
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', processPage);
-    } else {
-      setTimeout(processPage, 500); // Small delay to ensure page is ready
+      await new Promise(resolve => {
+        document.addEventListener('DOMContentLoaded', resolve);
+      });
+      log.debug('DOMContentLoaded fired');
     }
+    
+    // Wait 10 seconds for page to stabilize
+    log.debug('Waiting 10 seconds for page to load completely...');
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    
+    // Then wait for product details table to have full content
+    await waitForProductDetails();
+    
+    // Now process the page
+    log.debug('Starting processing with fully loaded content...');
+    processPage();
 
     // Set up observer for dynamic content
     setupObserver();
@@ -632,7 +966,8 @@
       if (window.location.href !== currentUrl) {
         currentUrl = window.location.href;
         hasProcessed = false;
-        setTimeout(processPage, 1000);
+        console.log('[MeraProduct] URL changed - reprocessing...');
+        waitForProductDetails().then(processPage);
       }
     }, 1000);
   }

@@ -114,7 +114,7 @@ class OriginDetector {
       'haridwar industrial estate', 'sidcul', 'iie pantnagar', 'kashipur industrial area',
       'balanagar', 'jeedimetla', 'patancheru', 'medchal', 'pashamylaram', 'bollaram',
       'jejuri', 'khed', 'kurkumbh', 'shikrapur', 'rajgurunagar', 'talegaon', 'urse',
-      'waluj', 'chikalthana', 'shendra', 'bidkin', 'paithan'
+      'waluj', 'chikalthana', 'shendra', 'bidkin', 'paithan', 'Okhla'
     ];
 
     // Industrial area keywords
@@ -234,17 +234,22 @@ class OriginDetector {
     badge.className = 'meraproduct-floating-badge';
     
     if (isMadeInIndia) {
-      // Made in India - Green badge with Indian flag
+      // Determine badge color based on confidence
+      const confidencePercent = Math.round(confidence * 100);
+      const badgeClass = confidencePercent >= 70 ? 'meraproduct-badge-india' : 'meraproduct-badge-india-low';
+      const confidenceEmoji = confidencePercent >= 70 ? '✅' : '⚠️';
+      
+      // Made in India - Green (≥70%) or Yellow (<70%) badge with Indian flag
       badge.innerHTML = `
-        <div class="meraproduct-badge-inner meraproduct-badge-india">
+        <div class="meraproduct-badge-inner ${badgeClass}">
           <div class="meraproduct-badge-icon">🇮🇳</div>
           <div class="meraproduct-badge-text">
             <div class="meraproduct-badge-title">MADE IN INDIA</div>
-            <div class="meraproduct-badge-confidence">Confidence: ${Math.round(confidence * 100)}%</div>
+            <div class="meraproduct-badge-confidence">${confidenceEmoji} Confidence: ${confidencePercent}%</div>
           </div>
         </div>
       `;
-      badge.setAttribute('title', 'Click to view product history - Made in India 🇮🇳');
+      badge.setAttribute('title', `Click to view product history - Made in India 🇮🇳 (${confidencePercent}% confidence)`);
     } else {
       // Not Made in India - Red badge with warning
       badge.innerHTML = `
@@ -339,11 +344,19 @@ class OriginDetector {
         transform: scale(1.02);
       }
       
-      /* Made in India - Green theme */
+      /* Made in India - Green theme (High Confidence ≥70%) */
       .meraproduct-badge-india {
         background: linear-gradient(135deg, #138808 0%, #34a853 100%);
         border-color: #0d6906;
         color: white;
+      }
+      
+      /* Made in India - Yellow theme (Low Confidence <70%) */
+      .meraproduct-badge-india-low {
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        border-color: #d97706;
+        color: #78350f;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
       }
       
       /* Not Made in India - Bold Red theme */

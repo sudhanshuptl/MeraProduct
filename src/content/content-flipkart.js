@@ -507,8 +507,7 @@
    * 
    * Confidence Scoring:
    * - 100%: Country of Origin: India + Manufacturer in India (both present)
-   * - 100%: Explicit "Made in India" or "Manufactured in India"
-   * - 70%: Country of Origin: India (alone, without manufacturer info)
+   * - 60%: Country of Origin: India (alone, without manufacturer info)
    * - 50%: Only Manufacturer address contains India (less certain)
    * 
    * @param {string} text - The text to analyze
@@ -632,7 +631,7 @@
     log.debug('Country of Origin: India (extracted)?', hasCountryOfOriginExtracted);
     log.debug('Manufacturer is Indian?', hasManufacturerIndia);
     
-    // Combined scoring logic
+    // New Combined scoring logic: 60% + 50% = 100%
     if (hasCountryOfOrigin && hasManufacturerIndia) {
       log.success('Made in India - Country + Manufacturer (100%)');
       log.groupEnd();
@@ -645,11 +644,11 @@
     }
     
     if (hasCountryOfOrigin) {
-      log.success('Made in India - Country only (70%)');
+      log.success('Made in India - Country only (60%)');
       log.groupEnd();
       return {
         isIndian: true,
-        confidence: 0.70,
+        confidence: 0.60,
         indicator: 'Country of Origin: India',
         manufacturer: manufacturerAddress
       };
@@ -712,72 +711,18 @@
    * @param {string} address - The address text to check
    * @returns {boolean} True if address appears to be Indian
    */
+  /**
+   * Check if address text indicates Indian origin
+   * Uses centralized IndianLocations config (src/config/indian-locations.js)
+   */
   function isIndianAddress(address) {
-    if (!address) return false;
+    const result = IndianLocations.isIndianAddress(address);
     
-    const lowerAddress = address.toLowerCase();
-    
-    // Check 1: Contains "India" explicitly
-    if (lowerAddress.includes('india')) return true;
-    
-    // Check 2: Indian PIN code (6 digits, range 100000-855999)
-    const pinCodeMatch = address.match(/\b[1-8]\d{5}\b/);
-    if (pinCodeMatch) {
-      const pinCode = parseInt(pinCodeMatch[0]);
-      if (pinCode >= 100000 && pinCode <= 855999) {
-        log.debug('Indian PIN code detected:', pinCodeMatch[0]);
-        return true;
-      }
+    if (result.isIndian) {
+      log.debug(`Indian address detected: ${result.matchType} = ${result.matchValue}`);
     }
     
-    // Check 3: Indian industrial areas and zones
-    const indianIndustrialAreas = [
-      'sipcot', 'sidco', 'midc', 'gidc', 'kasez', 'seepz', 'nepz',
-      'industrial estate', 'industrial area', 'industrial complex',
-      'export promotion', 'special economic zone', 'sez'
-    ];
-    
-    for (const area of indianIndustrialAreas) {
-      if (lowerAddress.includes(area)) {
-        log.debug('Indian industrial area:', area);
-        return true;
-      }
-    }
-    
-    // Check 4: Major Indian cities
-    const indianCities = [
-      'mumbai', 'delhi', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata',
-      'pune', 'ahmedabad', 'surat', 'jaipur', 'lucknow', 'kanpur', 'nagpur', 'indore',
-      'thane', 'bhopal', 'visakhapatnam', 'pimpri', 'patna', 'vadodara', 'ghaziabad',
-      'ludhiana', 'agra', 'nashik', 'faridabad', 'meerut', 'rajkot', 'varanasi',
-      'noida', 'gurugram', 'gurgaon', 'hosur', 'coimbatore', 'madurai', 'kochi',
-      'chandigarh', 'guwahati', 'thiruvananthapuram', 'trivandrum', 'mysore', 'mysuru',
-      'aurangabad', 'dhanbad', 'amritsar', 'ranchi', 'jodhpur', 'raipur', 'kota'
-    ];
-    
-    for (const city of indianCities) {
-      if (lowerAddress.includes(city)) {
-        log.debug('Indian city detected:', city);
-        return true;
-      }
-    }
-    
-    // Check 5: Indian states
-    const indianStates = [
-      'maharashtra', 'tamil nadu', 'karnataka', 'kerala', 'gujarat', 'rajasthan',
-      'west bengal', 'madhya pradesh', 'uttar pradesh', 'bihar', 'andhra pradesh',
-      'telangana', 'punjab', 'haryana', 'jharkhand', 'odisha', 'uttarakhand',
-      'himachal pradesh', 'assam', 'chhattisgarh', 'goa', 'jammu', 'kashmir'
-    ];
-    
-    for (const state of indianStates) {
-      if (lowerAddress.includes(state)) {
-        log.debug('Indian state detected:', state);
-        return true;
-      }
-    }
-    
-    return false;
+    return result.isIndian;
   }
 
   /**
