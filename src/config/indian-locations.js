@@ -86,7 +86,7 @@ const IndianLocations = {
     'mehsana', 'palanpur', 'gandhidham', 'mundra', 'sriperumbudur',
     'oragadam', 'irungattukottai', 'hosur', 'krishnagiri', 'ranipet',
     'ambur', 'vellore', 'karur', 'namakkal', 'dindigul', 'thoothukudi',
-    'tuticorin', 'nagercoil', 'rajapalayam', 'pollachi'
+    'tuticorin', 'nagercoil', 'rajapalayam', 'pollachi','kalamkhand', 'manor', 'wada', 'Bawal', 'Rewari',
   ],
 
   /**

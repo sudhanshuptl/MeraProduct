@@ -114,7 +114,7 @@ class OriginDetector {
       'haridwar industrial estate', 'sidcul', 'iie pantnagar', 'kashipur industrial area',
       'balanagar', 'jeedimetla', 'patancheru', 'medchal', 'pashamylaram', 'bollaram',
       'jejuri', 'khed', 'kurkumbh', 'shikrapur', 'rajgurunagar', 'talegaon', 'urse',
-      'waluj', 'chikalthana', 'shendra', 'bidkin', 'paithan', 'Okhla'
+      'waluj', 'chikalthana', 'shendra', 'bidkin', 'paithan', 'Okhla', 'kalamkhand', 'Manor', 'Wada', 'Rewari'
     ];
 
     // Industrial area keywords
