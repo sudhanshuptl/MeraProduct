@@ -57,7 +57,8 @@
    * Searches for the specific "Country of Origin" field without requiring clicks
    */
   function extractCountryOfOrigin() {
-    log.debug('🔍 Searching for Country of Origin...');
+    log.group('� Country of Origin Detection');
+    log.info('Starting extraction process...');
     
     // Method 1: Look for "Country of Origin" text followed by value
     // Common patterns on Amazon:
@@ -67,30 +68,36 @@
     
     const originPatterns = [
       // Pattern 1: Table rows with "Country of Origin" label
-      { selector: 'tr', labelPattern: /country\s+of\s+origin/i },
+      { selector: 'tr', labelPattern: /country\s+of\s+origin/i, name: 'Table Row' },
       // Pattern 2: List items with "Country of Origin"
-      { selector: 'li', labelPattern: /country\s+of\s+origin/i },
+      { selector: 'li', labelPattern: /country\s+of\s+origin/i, name: 'List Item' },
       // Pattern 3: Divs with "Country of Origin"
-      { selector: 'div', labelPattern: /country\s+of\s+origin/i },
+      { selector: 'div', labelPattern: /country\s+of\s+origin/i, name: 'Div Element' },
       // Pattern 4: Spans with "Country of Origin"
-      { selector: 'span', labelPattern: /country\s+of\s+origin/i }
+      { selector: 'span', labelPattern: /country\s+of\s+origin/i, name: 'Span Element' }
     ];
+    
+    log.debug(`Searching ${originPatterns.length} pattern types...`);
     
     for (const pattern of originPatterns) {
       const elements = document.querySelectorAll(pattern.selector);
+      log.verbose(`  Checking ${elements.length} ${pattern.name}(s)...`);
       
       for (const element of elements) {
         const text = element.textContent.trim();
         
         if (pattern.labelPattern.test(text)) {
-          log.debug('✓ Found element with "Country of Origin":', text.substring(0, 100));
+          log.debug(`  ✓ Found match in ${pattern.name}`);
+          log.verbose(`     Raw text: "${text.substring(0, 150)}"`);
           
           // Try to extract the country value from the same element
           // Look for : or other separators
           const matches = text.match(/country\s+of\s+origin[:\s]*([A-Za-z\s]+)/i);
           if (matches && matches[1]) {
             const country = matches[1].trim();
-            log.success(`Found Country of Origin: "${country}"`);
+            log.success(`✅ EXTRACTED Country of Origin: "${country}"`);
+            log.data('Extraction method', `Inline text (${pattern.name})`);
+            log.groupEnd();
             return country;
           }
           
@@ -100,7 +107,10 @@
             const cells = element.querySelectorAll('td');
             if (cells.length >= 2) {
               const value = cells[1].textContent.trim();
-              log.success(`Found Country of Origin in table: "${value}"`);
+              log.success(`✅ EXTRACTED Country of Origin: "${value}"`);
+              log.data('Extraction method', 'Table cell (TD element)');
+              log.data('Table structure', `${cells.length} cells found`);
+              log.groupEnd();
               return value;
             }
           }
@@ -110,7 +120,9 @@
           if (nextSibling) {
             const siblingText = nextSibling.textContent.trim();
             if (siblingText && siblingText.length < 50) {
-              log.success(`Found Country of Origin in sibling: "${siblingText}"`);
+              log.success(`✅ EXTRACTED Country of Origin: "${siblingText}"`);
+              log.data('Extraction method', 'Next sibling element');
+              log.groupEnd();
               return siblingText;
             }
           }
@@ -119,14 +131,18 @@
           const valueElement = element.querySelector('[class*="value"], [class*="Value"]');
           if (valueElement) {
             const value = valueElement.textContent.trim();
-            log.success(`Found Country of Origin in child: "${value}"`);
+            log.success(`✅ EXTRACTED Country of Origin: "${value}"`);
+            log.data('Extraction method', 'Child element with "value" class');
+            log.groupEnd();
             return value;
           }
         }
       }
     }
     
-    log.debug('⚠️ Country of Origin not found with direct selectors');
+    log.warn('⚠️ Country of Origin NOT FOUND on page');
+    log.info('Will fall back to text analysis method');
+    log.groupEnd();
     return null;
   }
 
@@ -134,6 +150,8 @@
    * Extract product information from Amazon page
    */
   function extractProductInfo() {
+    log.group('📦 Product Information Extraction');
+    
     const productInfo = {
       title: '',
       image: '',
@@ -148,37 +166,46 @@
     const titleElement = document.querySelector(AMAZON_SELECTORS.productTitle);
     if (titleElement) {
       productInfo.title = titleElement.textContent.trim();
+      log.data('Product Title', productInfo.title.substring(0, 80) + (productInfo.title.length > 80 ? '...' : ''));
+    } else {
+      log.warn('Product title not found');
     }
 
     // Extract product image
     const imageElement = document.querySelector(AMAZON_SELECTORS.productImage);
     if (imageElement) {
       productInfo.image = imageElement.src || imageElement.getAttribute('data-old-hires') || '';
+      log.data('Product Image', productInfo.image ? '✓ Found' : '✗ Not found');
     }
 
     // Extract feature bullets
     const featuresElement = document.querySelector(AMAZON_SELECTORS.featureBullets);
     if (featuresElement) {
       productInfo.features = featuresElement.textContent.trim();
+      log.data('Features/Bullets', `${productInfo.features.length} characters`);
     }
 
     // Extract product details
     const detailsElement = document.querySelector(AMAZON_SELECTORS.productDetails);
     if (detailsElement) {
       productInfo.details = detailsElement.textContent.trim();
+      log.data('Product Details', `${productInfo.details.length} characters`);
     }
 
     // Extract additional information
     const additionalElement = document.querySelector(AMAZON_SELECTORS.additionalInfo);
     if (additionalElement) {
       productInfo.additionalInfo = additionalElement.textContent.trim();
+      log.data('Additional Info', `${productInfo.additionalInfo.length} characters`);
     }
 
-    // Extract Country of Origin directly
+    log.groupEnd();
+
+    // Extract Country of Origin directly (this creates its own log group)
     const countryOfOrigin = extractCountryOfOrigin();
     if (countryOfOrigin) {
       productInfo.countryOfOrigin = countryOfOrigin;
-      log.info(`✅ Country of Origin extracted: "${countryOfOrigin}"`);
+      log.info(`✅ Country of Origin stored: "${countryOfOrigin}"`);
     }
 
     // Combine all text for analysis
@@ -187,7 +214,10 @@
     // If we have explicit country of origin, prepend it to make detection more accurate
     if (productInfo.countryOfOrigin) {
       productInfo.allText = `Country of Origin: ${productInfo.countryOfOrigin} ${productInfo.allText}`;
+      log.verbose('Combined text now includes explicit Country of Origin');
     }
+
+    log.data('Total text for analysis', `${productInfo.allText.length} characters`);
 
     return productInfo;
   }
@@ -264,18 +294,30 @@
     if (hasProcessed) return;
 
     try {
+      log.group('🚀 Processing Amazon Product Page');
+      log.info(`URL: ${window.location.href}`);
+      
       const productInfo = extractProductInfo();
       
       if (!productInfo.allText.trim()) {
+        log.warn('No product text found yet, page may still be loading');
+        log.groupEnd();
         // Page might still be loading, try again later
         setTimeout(processPage, 2000);
         return;
       }
 
+      log.info('Product information extracted successfully');
+      log.group('🔍 Origin Detection Analysis');
+
       // Check if we have explicit Country of Origin
       let result;
       if (productInfo.countryOfOrigin) {
-        log.info(`🎯 Using explicit Country of Origin: "${productInfo.countryOfOrigin}"`);
+        log.info('═══════════════════════════════════════');
+        log.info('  EXPLICIT COUNTRY OF ORIGIN FOUND!');
+        log.info('═══════════════════════════════════════');
+        log.data('Country', productInfo.countryOfOrigin);
+        log.data('Confidence', '100% (Explicit field)');
         
         // Check if it's India
         const countryLower = productInfo.countryOfOrigin.toLowerCase().trim();
@@ -285,22 +327,48 @@
             confidence: 1.0, // 100% confidence when explicitly stated
             indicator: 'Country of Origin: India (Verified)'
           };
-          log.success('✅ Explicit Country of Origin: INDIA (100% confidence)');
+          log.success('🇮🇳 RESULT: MADE IN INDIA ✅');
+          log.data('Detection Method', 'Explicit Country of Origin field');
         } else {
           result = {
             isIndian: false,
             confidence: 1.0, // 100% confidence when explicitly stated
             indicator: `Country of Origin: ${productInfo.countryOfOrigin}`
           };
-          log.info(`⚠️ Explicit Country of Origin: ${productInfo.countryOfOrigin} (NOT India)`);
+          log.warn(`🚫 RESULT: NOT Made in India (Origin: ${productInfo.countryOfOrigin})`);
+          log.data('Detection Method', 'Explicit Country of Origin field');
         }
       } else {
         // Fallback to text analysis
-        log.debug('No explicit Country of Origin found, using text analysis');
+        log.info('No explicit Country of Origin field found');
+        log.info('Using text pattern analysis...');
         result = detector.detectFromText(productInfo.allText);
+        log.data('Analysis Result', result.isIndian ? '🇮🇳 Made in India' : '🚫 Not Made in India');
+        log.data('Confidence', `${Math.round(result.confidence * 100)}%`);
+        log.data('Indicator', result.indicator);
+        log.data('Detection Method', 'Text pattern matching');
+      }
+      
+      log.groupEnd(); // End Origin Detection Analysis
+
+      // Extract and log manufacturer information
+      if (result.isIndian || productInfo.countryOfOrigin) {
+        log.group('🏭 Manufacturer Information');
+        const manufacturer = detector.extractManufacturer(productInfo.allText);
+        if (manufacturer) {
+          log.success(`✅ MANUFACTURER FOUND: "${manufacturer}"`);
+          log.verbose('Extracted from product text analysis');
+        } else {
+          log.warn('⚠️ Manufacturer information not found');
+        }
+        log.groupEnd();
       }
       
       if (result.isIndian && result.confidence > 0.5) {
+        log.success('═══════════════════════════════════════');
+        log.success('  🇮🇳 DISPLAYING INDIAN BADGE');
+        log.success('═══════════════════════════════════════');
+        
         await insertIndianBadge(result, productInfo);
         hasProcessed = true;
 
@@ -320,15 +388,24 @@
           confidence: result.confidence,
           indicator: result.indicator
         });
+        
+        log.success('Product saved to history');
       } else {
         // Show "NOT MADE IN INDIA" badge for non-Indian products
-        log.info('[MeraProduct] Product is not Made in India - showing red badge.');
+        log.info('═══════════════════════════════════════');
+        log.info('  🚫 DISPLAYING NON-INDIAN BADGE');
+        log.info('═══════════════════════════════════════');
+        log.data('Reason', result.indicator || 'Country of Origin is not India');
+        
         await insertFloatingBadge(false, result, productInfo);
         hasProcessed = true;
       }
 
+      log.groupEnd(); // End Processing Amazon Product Page
+
     } catch (error) {
-      console.error('[MeraProduct] Error processing Amazon page:', error);
+      log.error('❌ Error processing Amazon page:', error);
+      log.groupEnd();
       chrome.runtime.sendMessage({
         type: 'ERROR',
         error: error.message,
