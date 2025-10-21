@@ -1,217 +1,152 @@
-# 📚 MeraProduct Documentation Index
+# MeraProduct Documentation
 
-Welcome to the MeraProduct documentation! This index provides quick access to all documentation organized by category.
+Welcome to MeraProduct documentation! This directory contains comprehensive guides and documentation for users and developers.
 
-## 📖 Table of Contents
+## 📚 Main Documentation
 
-- [Quick Start](#quick-start)
-- [Features](#features)
-- [User Guides](#user-guides)
-- [Bug Fixes & Improvements](#bug-fixes--improvements)
-- [Debug & Development](#debug--development)
-- [Contributing](#contributing)
+### Essential Reading
 
----
+1. **[User Guide](USER_GUIDE.md)** - Complete guide for end users
+   - Installation and setup
+   - How to use the extension
+   - Features and settings
+   - FAQ and troubleshooting
+   - Privacy information
+
+2. **[Developer Guide](DEVELOPER_GUIDE.md)** - Technical reference for developers
+   - Architecture overview
+   - Code structure and components
+   - Detection algorithms
+   - Development workflow
+   - Testing and deployment
+
+3. **[Changelog](CHANGELOG.md)** - Version history and updates
+   - Latest bug fixes
+   - New features
+   - Known issues
+   - Upcoming features
 
 ## 🚀 Quick Start
 
-**New to MeraProduct?** Start here:
+**For Users:**
+- Read: [User Guide](USER_GUIDE.md) → [Getting Started](USER_GUIDE.md#getting-started)
 
-1. **[Main README](../README.md)** - Project overview, installation, and basic usage
-2. **[Setup Guide](guides/SETUP_COMPLETE.md)** - Complete setup instructions
-3. **[Usage Guide](guides/USAGE_GUIDE.md)** - How to use the extension
+**For Developers:**
+- Read: [Developer Guide](DEVELOPER_GUIDE.md) → [Architecture Overview](DEVELOPER_GUIDE.md#architecture-overview)
+- Clone repo and see: [Development Workflow](DEVELOPER_GUIDE.md#development-workflow)
 
----
-
-## ✨ Features
-
-Learn about the core features and capabilities:
-
-### Core Features
-- **[Product History Tracking](features/HISTORY_FEATURE.md)**  
-  📊 Automatic tracking of all products you've checked, with statistics and history management
-
-- **[Clickable Badge System](features/CLICKABLE_BADGE_FEATURE.md)**  
-  🎯 Interactive floating badges that guide users to the extension popup
-
-- **[Badge Design System](features/BADGE_DESIGN.md)**  
-  🎨 Visual design specifications and implementation details
-
-### Detection Features
-- **[Indian Address Detection](features/INDIAN_ADDRESS_DETECTION.md)**  
-  🇮🇳 Advanced algorithms for identifying Indian manufacturing locations
-
----
-
-## 📖 User Guides
-
-Step-by-step guides for users:
-
-### Getting Started
-- **[Setup Complete Guide](guides/SETUP_COMPLETE.md)**  
-  🛠️ Full installation and configuration walkthrough
-
-- **[Usage Guide](guides/USAGE_GUIDE.md)**  
-  📱 How to use all features of the extension
-
-### Using Features
-- **[Clickable Badge Guide](guides/CLICKABLE_BADGE_GUIDE.md)**  
-  👆 Visual guide to using the interactive badge system
-
-### Troubleshooting
-- **[Badge Click Troubleshooting](guides/BADGE_CLICK_TROUBLESHOOTING.md)**  
-  🔧 Debug and fix badge interaction issues
-
----
-
-## 🐛 Bug Fixes & Improvements
-
-Technical documentation of bugs fixed and improvements made:
-
-### Critical Fixes
-- **[Critical Bug Fix Summary](fixes/CRITICAL_BUG_FIX.md)**  
-  🚨 Word boundary detection fix for "Taluk" → "UK" false positive
-
-- **[Country Extraction Fix](fixes/COUNTRY_EXTRACTION_FIX.md)**  
-  🌍 Improved regex patterns for accurate country detection
-
-### Detection Improvements
-- **[False Positive Prevention](fixes/FALSE_POSITIVE_PREVENTION.md)**  
-  ✅ Comprehensive guide to avoiding detection false positives
-
-### UI/UX Fixes
-- **[Settings Panel Fix](fixes/SETTINGS_PANEL_FIX.md)**  
-  ⚙️ Fixed settings panel not opening on click
-
-- **[Badge Click Fix](fixes/BADGE_CLICK_FIX_SUMMARY.md)**  
-  🖱️ Resolved badge click functionality issues
-
-- **[Removed Redundant Notifications](fixes/REMOVED_REDUNDANT_NOTIFICATIONS.md)**  
-  🔕 Cleaned up duplicate notification spam
-
----
-
-## 🔍 Debug & Development
-
-For developers and advanced users:
-
-### Debug Mode
-- **[Debug Mode Guide](debug/DEBUG_MODE_GUIDE.md)**  
-  🐛 How to enable and use debug mode for troubleshooting
-
-- **[Debug Mode Implementation](debug/DEBUG_MODE_IMPLEMENTATION.md)**  
-  💻 Technical implementation details of debug mode
-
-- **[Debug History](debug/DEBUG_HISTORY.md)**  
-  📝 History of debug features and changes
-
-### Logging
-- **[Logging Guide](debug/LOGGING_GUIDE.md)**  
-  📋 Understanding extension logging system
-
-- **[Detailed Logging](debug/DETAILED_LOGGING.md)**  
-  🔬 Advanced logging features and analysis
-
-- **[Debug Mode Documentation](debug/DEBUG_MODE.md)**  
-  📚 Complete debug mode reference
-
----
-
-## 🤝 Contributing
-
-Want to contribute to MeraProduct?
-
-1. **Read the main [README](../README.md)** for project structure
-2. **Check [GitHub Issues](https://github.com/sudhanshuptl/MeraProduct/issues)** for open tasks
-3. **Review [Copilot Instructions](../.github/copilot-instructions.md)** for coding guidelines
-4. **Follow debug guides** for testing your changes
-
-### Development Resources
-- [Main README](../README.md) - Architecture & conventions
-- [Debug Mode Guide](debug/DEBUG_MODE_GUIDE.md) - Testing & debugging
-- [False Positive Prevention](fixes/FALSE_POSITIVE_PREVENTION.md) - Detection best practices
-
----
-
-## 📂 Documentation Structure
+## �� Documentation Structure
 
 ```
 docs/
-├── README.md (this file)           # Documentation index
-├── features/                        # Feature documentation
-│   ├── BADGE_DESIGN.md
-│   ├── CLICKABLE_BADGE_FEATURE.md
-│   ├── HISTORY_FEATURE.md
-│   └── INDIAN_ADDRESS_DETECTION.md
-├── guides/                          # User guides
-│   ├── BADGE_CLICK_TROUBLESHOOTING.md
-│   ├── CLICKABLE_BADGE_GUIDE.md
-│   ├── SETUP_COMPLETE.md
-│   └── USAGE_GUIDE.md
-├── fixes/                           # Bug fixes & improvements
-│   ├── BADGE_CLICK_FIX_SUMMARY.md
-│   ├── COUNTRY_EXTRACTION_FIX.md
-│   ├── CRITICAL_BUG_FIX.md
-│   ├── FALSE_POSITIVE_PREVENTION.md
-│   ├── REMOVED_REDUNDANT_NOTIFICATIONS.md
-│   └── SETTINGS_PANEL_FIX.md
-└── debug/                           # Debug & development
-    ├── DEBUG_HISTORY.md
-    ├── DEBUG_MODE.md
-    ├── DEBUG_MODE_GUIDE.md
-    ├── DEBUG_MODE_IMPLEMENTATION.md
-    ├── DETAILED_LOGGING.md
-    └── LOGGING_GUIDE.md
+├── README.md              # This file
+├── USER_GUIDE.md          # Complete user documentation
+├── DEVELOPER_GUIDE.md     # Complete developer documentation
+├── CHANGELOG.md           # Version history and updates
+│
+├── features/              # Feature-specific docs (legacy)
+├── fixes/                 # Bug fix documentation (legacy)
+├── guides/                # Step-by-step guides (legacy)
+└── debug/                 # Debug and logging docs (legacy)
 ```
 
+**Note:** Legacy folders retained for reference. All new documentation should go in the main consolidated files.
+
+## 🎯 Finding What You Need
+
+### I want to...
+
+**...install and use the extension**
+→ [User Guide](USER_GUIDE.md)
+
+**...understand how it works**
+→ [Developer Guide - Architecture](DEVELOPER_GUIDE.md#architecture-overview)
+
+**...contribute code**
+→ [Developer Guide - Development Workflow](DEVELOPER_GUIDE.md#development-workflow)
+
+**...report a bug**
+→ [User Guide - Troubleshooting](USER_GUIDE.md#troubleshooting)
+
+**...see what changed**
+→ [Changelog](CHANGELOG.md)
+
+**...deploy to Chrome Store**
+→ [Developer Guide - Deployment](DEVELOPER_GUIDE.md#deployment)
+
+**...understand detection logic**
+→ [Developer Guide - Detection Logic](DEVELOPER_GUIDE.md#detection-logic)
+
+**...enable debug mode**
+→ [User Guide - Settings](USER_GUIDE.md#settings) or [Developer Guide - Debug & Logging](DEVELOPER_GUIDE.md#debug--logging)
+
+## 🔍 Legacy Documentation
+
+The following folders contain legacy documentation for specific features and fixes:
+
+### features/
+- Badge design and implementation
+- History feature
+- Address detection
+- Clickable badge
+
+### fixes/
+- Bug fix summaries
+- Country extraction fixes
+- False positive prevention
+- Settings panel fixes
+
+### guides/
+- Chrome Store deployment
+- Badge troubleshooting
+- Setup guides
+
+### debug/
+- Debug mode implementation
+- Logging guides
+- Debug history
+
+**Note:** Most content from these folders has been consolidated into the main guides. They're kept for reference and historical context.
+
+## 📝 Contributing to Docs
+
+### Adding New Documentation
+
+**For new features:**
+1. Update [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) with technical details
+2. Update [USER_GUIDE.md](USER_GUIDE.md) with user-facing information
+3. Add entry to [CHANGELOG.md](CHANGELOG.md)
+
+**For bug fixes:**
+1. Document in [CHANGELOG.md](CHANGELOG.md)
+2. Update relevant sections in other guides if needed
+
+**For new guides:**
+- Add to appropriate section in main consolidated docs
+- Create separate file only if extensive (>500 lines)
+
+### Documentation Standards
+
+- Use clear, concise language
+- Include code examples where helpful
+- Add screenshots for UI-related docs
+- Keep table of contents updated
+- Use proper markdown formatting
+- Test all links before committing
+
+## 🌐 External Resources
+
+- **GitHub Repository:** https://github.com/sudhanshuptl/MeraProduct
+- **Chrome Extension Docs:** https://developer.chrome.com/docs/extensions/
+- **Manifest V3 Guide:** https://developer.chrome.com/docs/extensions/mv3/intro/
+
+## 💬 Get Help
+
+- **Issues:** [GitHub Issues](https://github.com/sudhanshuptl/MeraProduct/issues)
+- **Discussions:** [GitHub Discussions]
+- **Email:** [Your Email]
+
 ---
 
-## 🔗 Quick Links
-
-### Most Important Docs
-1. 📘 [Main README](../README.md) - **Start here**
-2. 🚀 [Usage Guide](guides/USAGE_GUIDE.md) - **How to use**
-3. 🐛 [Debug Mode Guide](debug/DEBUG_MODE_GUIDE.md) - **Troubleshooting**
-4. ✨ [Clickable Badge Guide](guides/CLICKABLE_BADGE_GUIDE.md) - **Feature showcase**
-
-### For Developers
-1. 💻 [Debug Mode Implementation](debug/DEBUG_MODE_IMPLEMENTATION.md)
-2. 🔬 [False Positive Prevention](fixes/FALSE_POSITIVE_PREVENTION.md)
-3. 🌍 [Country Extraction Fix](fixes/COUNTRY_EXTRACTION_FIX.md)
-4. 🎨 [Badge Design System](features/BADGE_DESIGN.md)
-
-### Recent Changes
-1. 🔕 [Removed Redundant Notifications](fixes/REMOVED_REDUNDANT_NOTIFICATIONS.md)
-2. 🖱️ [Badge Click Fix](fixes/BADGE_CLICK_FIX_SUMMARY.md)
-3. ⚙️ [Settings Panel Fix](fixes/SETTINGS_PANEL_FIX.md)
-4. 🚨 [Critical Bug Fix](fixes/CRITICAL_BUG_FIX.md)
-
----
-
-## 📊 Documentation Stats
-
-- **Total Documents:** 20
-- **Features:** 4
-- **User Guides:** 4
-- **Bug Fixes:** 6
-- **Debug Docs:** 6
-
----
-
-## 🔄 Last Updated
-
-**Date:** October 20, 2025  
-**Version:** 1.0.0  
-**Status:** All documentation organized and indexed
-
----
-
-## 💡 Need Help?
-
-- **Can't find what you're looking for?** Check the [Main README](../README.md)
-- **Found an issue?** [Open a GitHub Issue](https://github.com/sudhanshuptl/MeraProduct/issues)
-- **Want to contribute?** Review the documentation and submit a PR!
-
----
-
-**Happy browsing! 🇮🇳 Support Made in India products! 🎉**
+**Last Updated:** October 21, 2025  
+**Documentation Version:** 2.0
