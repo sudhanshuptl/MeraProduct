@@ -67,13 +67,15 @@
     // - In additional information section
     
     const originPatterns = [
-      // Pattern 1: Table rows with "Country of Origin" label
+      // Pattern 1: Table header (th) with "Country of Origin" label
+      { selector: 'th', labelPattern: /country\s+of\s+origin/i, name: 'Table Header (TH)' },
+      // Pattern 2: Table rows with "Country of Origin" label
       { selector: 'tr', labelPattern: /country\s+of\s+origin/i, name: 'Table Row' },
-      // Pattern 2: List items with "Country of Origin"
+      // Pattern 3: List items with "Country of Origin"
       { selector: 'li', labelPattern: /country\s+of\s+origin/i, name: 'List Item' },
-      // Pattern 3: Divs with "Country of Origin"
+      // Pattern 4: Divs with "Country of Origin"
       { selector: 'div', labelPattern: /country\s+of\s+origin/i, name: 'Div Element' },
-      // Pattern 4: Spans with "Country of Origin"
+      // Pattern 5: Spans with "Country of Origin"
       { selector: 'span', labelPattern: /country\s+of\s+origin/i, name: 'Span Element' }
     ];
     
@@ -102,8 +104,44 @@
           }
           
           // If not found in same element, check siblings or child elements
+          if (element.tagName === 'TH') {
+            // For table headers, the value might be in the next sibling th or td
+            const parentRow = element.parentElement;
+            if (parentRow) {
+              // Get all th and td elements in the row
+              const allCells = parentRow.querySelectorAll('th, td');
+              const currentIndex = Array.from(allCells).indexOf(element);
+              
+              // Check if there's a next cell
+              if (currentIndex !== -1 && currentIndex + 1 < allCells.length) {
+                const nextCell = allCells[currentIndex + 1];
+                const value = nextCell.textContent.trim();
+                // Exclude if it's another label (like "Manufacturer")
+                if (value && value.length < 50 && !/manufacturer|importer|packer/i.test(value)) {
+                  log.success(`✅ EXTRACTED Country of Origin: "${value}"`);
+                  log.data('Extraction method', 'Next table cell (TH/TD sibling)');
+                  log.data('Parent row structure', `${allCells.length} cells found`);
+                  log.groupEnd();
+                  return value;
+                }
+              }
+            }
+            
+            // Also try next sibling element directly
+            const nextSibling = element.nextElementSibling;
+            if (nextSibling && (nextSibling.tagName === 'TH' || nextSibling.tagName === 'TD')) {
+              const siblingText = nextSibling.textContent.trim();
+              if (siblingText && siblingText.length < 50 && !/manufacturer|importer|packer/i.test(siblingText)) {
+                log.success(`✅ EXTRACTED Country of Origin: "${siblingText}"`);
+                log.data('Extraction method', `Next sibling ${nextSibling.tagName} element`);
+                log.groupEnd();
+                return siblingText;
+              }
+            }
+          }
+          
           if (element.tagName === 'TR') {
-            // For table rows, look for td elements
+            // For table rows, look for td elements first
             const cells = element.querySelectorAll('td');
             if (cells.length >= 2) {
               const value = cells[1].textContent.trim();
@@ -112,6 +150,20 @@
               log.data('Table structure', `${cells.length} cells found`);
               log.groupEnd();
               return value;
+            }
+            
+            // If no td, try th elements
+            const headerCells = element.querySelectorAll('th');
+            if (headerCells.length >= 2) {
+              const value = headerCells[1].textContent.trim();
+              // Exclude if it's another label
+              if (value && !/manufacturer|importer|packer/i.test(value)) {
+                log.success(`✅ EXTRACTED Country of Origin: "${value}"`);
+                log.data('Extraction method', 'Table header cell (TH element)');
+                log.data('Table structure', `${headerCells.length} header cells found`);
+                log.groupEnd();
+                return value;
+              }
             }
           }
           
@@ -147,6 +199,85 @@
   }
 
   /**
+   * Extract "Manufacturer" directly from Amazon page
+   * Similar to Country of Origin extraction but for manufacturer info
+   */
+  function extractManufacturerInfo() {
+    log.group('🏭 Manufacturer Detection');
+    log.info('Starting manufacturer extraction...');
+    
+    const manufacturerPatterns = [
+      // Pattern 1: Table header (th) with "Manufacturer" label
+      { selector: 'th', labelPattern: /^manufacturer$/i, name: 'Table Header (TH)' },
+      // Pattern 2: Table rows with "Manufacturer" label
+      { selector: 'tr', labelPattern: /manufacturer/i, name: 'Table Row' },
+      // Pattern 3: Divs or spans with manufacturer info
+      { selector: 'div, span', labelPattern: /manufacturer[:\s]/i, name: 'Div/Span Element' }
+    ];
+    
+    log.debug(`Searching ${manufacturerPatterns.length} pattern types...`);
+    
+    for (const pattern of manufacturerPatterns) {
+      const elements = document.querySelectorAll(pattern.selector);
+      log.verbose(`  Checking ${elements.length} ${pattern.name}(s)...`);
+      
+      for (const element of elements) {
+        const text = element.textContent.trim();
+        
+        if (pattern.labelPattern.test(text)) {
+          log.debug(`  ✓ Found match in ${pattern.name}`);
+          log.verbose(`     Raw text: "${text.substring(0, 150)}"`);
+          
+          // Try to extract manufacturer from same element
+          const matches = text.match(/manufacturer[:\s]+(.+)/i);
+          if (matches && matches[1] && matches[1].trim().length > 3) {
+            const manufacturer = matches[1].trim();
+            log.success(`✅ EXTRACTED Manufacturer: "${manufacturer.substring(0, 100)}"`);
+            log.data('Extraction method', `Inline text (${pattern.name})`);
+            log.groupEnd();
+            return manufacturer;
+          }
+          
+          // For TH elements
+          if (element.tagName === 'TH') {
+            const parentRow = element.parentElement;
+            if (parentRow) {
+              const allCells = parentRow.querySelectorAll('th, td');
+              const currentIndex = Array.from(allCells).indexOf(element);
+              
+              if (currentIndex !== -1 && currentIndex + 1 < allCells.length) {
+                const nextCell = allCells[currentIndex + 1];
+                const value = nextCell.textContent.trim();
+                if (value && value.length > 3 && value.length < 200) {
+                  log.success(`✅ EXTRACTED Manufacturer: "${value.substring(0, 100)}"`);
+                  log.data('Extraction method', 'Next table cell (TH/TD sibling)');
+                  log.groupEnd();
+                  return value;
+                }
+              }
+            }
+            
+            const nextSibling = element.nextElementSibling;
+            if (nextSibling && (nextSibling.tagName === 'TH' || nextSibling.tagName === 'TD')) {
+              const siblingText = nextSibling.textContent.trim();
+              if (siblingText && siblingText.length > 3 && siblingText.length < 200) {
+                log.success(`✅ EXTRACTED Manufacturer: "${siblingText.substring(0, 100)}"`);
+                log.data('Extraction method', `Next sibling ${nextSibling.tagName} element`);
+                log.groupEnd();
+                return siblingText;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    log.debug('⚠️ Manufacturer NOT FOUND with direct extraction');
+    log.groupEnd();
+    return null;
+  }
+
+  /**
    * Extract product information from Amazon page
    */
   function extractProductInfo() {
@@ -159,6 +290,7 @@
       details: '',
       additionalInfo: '',
       countryOfOrigin: '',
+      manufacturer: '',
       allText: ''
     };
 
@@ -208,6 +340,13 @@
       log.info(`✅ Country of Origin stored: "${countryOfOrigin}"`);
     }
 
+    // Extract Manufacturer directly (this creates its own log group)
+    const manufacturer = extractManufacturerInfo();
+    if (manufacturer) {
+      productInfo.manufacturer = manufacturer;
+      log.info(`✅ Manufacturer stored: "${manufacturer.substring(0, 100)}${manufacturer.length > 100 ? '...' : ''}"`);
+    }
+
     // Combine all text for analysis
     productInfo.allText = `${productInfo.title} ${productInfo.features} ${productInfo.details} ${productInfo.additionalInfo}`;
     
@@ -215,6 +354,12 @@
     if (productInfo.countryOfOrigin) {
       productInfo.allText = `Country of Origin: ${productInfo.countryOfOrigin} ${productInfo.allText}`;
       log.verbose('Combined text now includes explicit Country of Origin');
+    }
+    
+    // If we have manufacturer, add it too
+    if (productInfo.manufacturer) {
+      productInfo.allText = `Manufacturer: ${productInfo.manufacturer} ${productInfo.allText}`;
+      log.verbose('Combined text now includes explicit Manufacturer');
     }
 
     log.data('Total text for analysis', `${productInfo.allText.length} characters`);
@@ -261,6 +406,10 @@
     // Save product to history
     if (productInfo && productInfo.title) {
       try {
+        // Use explicitly extracted manufacturer if available, otherwise try to extract from text
+        const manufacturerInfo = productInfo.manufacturer || 
+                                (result ? detector.extractManufacturer(productInfo.allText) : '');
+        
         await storage.saveProduct({
           name: productInfo.title,
           url: window.location.href,
@@ -268,7 +417,7 @@
           isMadeInIndia: isMadeInIndia,
           confidence: confidence,
           indicator: isMadeInIndia ? '🇮🇳 MADE IN INDIA' : '🚫 NOT MADE IN INDIA',
-          manufacturer: result ? detector.extractManufacturer(productInfo.allText) : '',
+          manufacturer: manufacturerInfo,
           image: productInfo.image
         });
         console.log('[MeraProduct] Product saved to history');
@@ -354,10 +503,13 @@
       // Extract and log manufacturer information
       if (result.isIndian || productInfo.countryOfOrigin) {
         log.group('🏭 Manufacturer Information');
-        const manufacturer = detector.extractManufacturer(productInfo.allText);
+        // Use explicitly extracted manufacturer if available
+        const manufacturer = productInfo.manufacturer || detector.extractManufacturer(productInfo.allText);
         if (manufacturer) {
-          log.success(`✅ MANUFACTURER FOUND: "${manufacturer}"`);
-          log.verbose('Extracted from product text analysis');
+          log.success(`✅ MANUFACTURER FOUND: "${manufacturer.substring(0, 100)}${manufacturer.length > 100 ? '...' : ''}"`);
+          log.verbose(productInfo.manufacturer ? 
+            'Extracted from product details table' : 
+            'Extracted from product text analysis');
         } else {
           log.warn('⚠️ Manufacturer information not found');
         }
@@ -372,8 +524,8 @@
         await insertIndianBadge(result, productInfo);
         hasProcessed = true;
 
-        // Extract manufacturer if possible
-        const manufacturer = detector.extractManufacturer(productInfo.allText);
+        // Use explicitly extracted manufacturer if available
+        const manufacturer = productInfo.manufacturer || detector.extractManufacturer(productInfo.allText);
         
         // Log the detection
         detector.logDetection(result, 'amazon', window.location.href);
