@@ -28,7 +28,7 @@
         "*://*.amazon.in/*/dp/*",
         "*://*.amazon.in/dp/*"
       ],
-      "js": ["src/utils/logger.js", "src/utils/storage.js", "src/utils/origin-detector.js", "src/content/content-amazon.js"],
+      "js": ["src/config/indian-locations.js", "src/utils/logger.js", "src/utils/storage.js", "src/utils/origin-detector.js", "src/content/content-amazon.js"],
       "css": ["src/content/content.css"],
       "run_at": "document_idle"
     },
@@ -37,7 +37,7 @@
         "*://www.flipkart.com/*/p/*",
         "*://www.flipkart.in/*/p/*"
       ],
-      "js": ["src/utils/logger.js", "src/utils/storage.js", "src/utils/origin-detector.js", "src/content/content-flipkart.js"],
+      "js": ["src/config/indian-locations.js", "src/utils/logger.js", "src/utils/storage.js", "src/utils/origin-detector.js", "src/content/content-flipkart.js"],
       "css": ["src/content/content.css"],
       "run_at": "document_idle"
     }
