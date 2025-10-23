@@ -225,6 +225,72 @@ See **[DEVELOPMENT.md#deployment](DEVELOPMENT.md#deployment)** for complete pre-
 
 ---
 
+## 🎨 Icon Setup
+
+### Creating Extension Icons
+
+The extension requires 4 icon sizes (16px, 32px, 48px, 128px). Use the icon resize script to generate all sizes from your source icon:
+
+```bash
+# Navigate to project directory
+cd /Users/sudhanshupatel/Github/MeraProduct
+
+# Run the resize script with your icon
+python3 scripts/resize-icon.py Resources/MyProduct128.png
+
+# Or if icon is elsewhere
+python3 scripts/resize-icon.py ~/Downloads/your-icon.png
+```
+
+**Tip:** Drag and drop your icon file into the terminal to auto-fill the path!
+
+### What Gets Created
+
+The script automatically generates:
+
+**Icon Sizes:**
+- `icon16.png` (16×16) - Browser toolbar
+- `icon32.png` (32×32) - Extension manager
+- `icon48.png` (48×48) - Extension details
+- `icon128.png` (128×128) - Chrome Web Store listing
+
+**Locations:**
+- `assets/icons/` - Source directory (for development)
+- `dist/assets/icons/` - Build output (for production)
+
+### Requirements
+
+- Python 3 (pre-installed on macOS/Linux)
+- Pillow library: `pip3 install Pillow`
+
+### After Creating Icons
+
+```bash
+# Rebuild extension
+npm run build
+
+# Package for Chrome Web Store
+npm run package
+```
+
+### Troubleshooting Icons
+
+**"Module named 'PIL' not found"**
+```bash
+pip3 install Pillow
+```
+
+**"Permission denied"**
+```bash
+chmod +x scripts/resize-icon.py
+```
+
+**Icons missing after build**
+- Ensure icons exist in `assets/icons/`
+- Run `npm run build` to copy to `dist/`
+
+---
+
 ## 🧪 Testing
 
 \`\`\`bash
