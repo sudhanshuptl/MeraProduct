@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MeraProduct - Made in India Detector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Instantly identifies Made in India products while browsing e-commerce sites. Support Atmanirbhar Bharat! 🇮🇳",
   "default_locale": "en",
   
